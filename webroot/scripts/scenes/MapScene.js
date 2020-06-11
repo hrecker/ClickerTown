@@ -59,16 +59,11 @@ export class MapScene extends Phaser.Scene {
         this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '+$' + state.getCashGrowthRate(), subtitleTextStyle);
         this.cashGrowthRateText.setOrigin(0.5);
 
-        // Text
-        this.add.text(16, 16, 'Map Scene', { fontSize: '32px', fill: '#FFFF' });
-
         // Cash growth timer
         this.lastCashGrowth = -1;
 
         // Click handler
         this.input.on("pointerup", this.addClickCash, this);
-        
-        console.log("created MapScene");
     }
 
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
