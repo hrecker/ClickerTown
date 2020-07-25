@@ -20,6 +20,9 @@ export class MapScene extends Phaser.Scene {
         this.load.image('block1', 'assets/sprites/Block_1.png');
         this.load.image('block2', 'assets/sprites/Block_2.png');
         this.load.image('block3', 'assets/sprites/Block_3.png');
+        this.load.image('boulder', 'assets/sprites/Boulder.png');
+        this.load.image('chest', 'assets/sprites/Chest.png');
+        this.load.image('crate', 'assets/sprites/Crate.png');
 
         this.tileMap = []
         this.tileMap.push([1, 2, 2]);
@@ -45,6 +48,9 @@ export class MapScene extends Phaser.Scene {
 
         // Blocks
         this.createTileMap();
+
+        // Hover image
+        this.hoverImage = this.add.image(-5000, -5000, 'crate');
 
         // UI
         let titleTextStyle = { font: "bold 32px Arial", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
@@ -138,9 +144,16 @@ export class MapScene extends Phaser.Scene {
             this.tileMapImages[tileX][tileY].setTint(0xff7c73);
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
+            let hoverXDiff = (tileX - tileY) * blockImageWidth;
+            let hoverYDiff = (tileX + tileY) * -blockImageWidth / 2;
+            this.hoverImage.x = this.mapOriginX + hoverXDiff;
+            this.hoverImage.y = this.mapOriginY + hoverYDiff - blockImageWidth / 4;
+            console.log("x: " + tileX + ", y: " + tileY);
         } else {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
+            this.hoverImage.x = -1000;
+            this.hoverImage.y = -1000;
         }
     }
 
