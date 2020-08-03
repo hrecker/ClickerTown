@@ -1,6 +1,8 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
 import * as tile from '../model/Tile';
+import * as build from '../model/Building';
+import * as util from '../util/Util';
 
 const blockImageHeight = 256;
 const blockImageWidth = 128;
@@ -63,7 +65,7 @@ export class MapScene extends Phaser.Scene {
         this.lastCashGrowth = -1;
 
         // Click handler
-        this.input.on("pointerup", this.addClickCash, this);
+        this.input.on("pointerup", this.handleClick, this);
     }
 
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
@@ -71,9 +73,11 @@ export class MapScene extends Phaser.Scene {
     createTileMap() {
         let tileMap = map.initializeMap(this.mapWidth, this.mapHeight);
         this.tileMapImages = new Array(this.mapWidth);
+        this.buildingImages = new Array(this.mapWidth);
 
         for (let x = this.mapWidth - 1; x >= 0; x--) {
             this.tileMapImages[x] = new Array(this.mapHeight);
+            this.buildingImages[x] = new Array(this.mapHeight);
             for (let y = this.mapHeight - 1; y >= 0; y--) {
                 let xDiff = (x - y) * blockImageWidth;
                 let yDiff = (x + y) * -blockImageWidth / 2;
@@ -93,6 +97,50 @@ export class MapScene extends Phaser.Scene {
             case tile.TileType.PATCHY_GRASS:
             default:
                 return 'patchy_grass';
+        }
+    }
+
+    handleClick(event) {
+        if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
+            // If highlighting a tile, build building
+            this.placeBuilding(event);
+        } else {
+            // Otherwise add cash
+            this.addClickCash(event);
+        }
+    }
+
+    placeBuilding(event) {
+        let x = this.tileHighlightActiveX;
+        let y = this.tileHighlightActiveY;
+        let tileMap = map.getMap();
+        if (tileMap[x][y].getBuilding() == null) {
+            state.setCurrentCash(state.getCurrentCash() - 10);
+            this.currentCashText.setText('$' + state.getCurrentCash());
+            let randomBuildingIndex = util.getRandomInt(0, 3);
+            tileMap[x][y].placeBuilding(build.getBuildingType(randomBuildingIndex));
+            let xDiff = (x - y) * blockImageWidth;
+            let yDiff = ((x + y) * -blockImageWidth / 2) - (blockImageWidth / 4);
+            let buildingImage = this.add.image(this.mapOriginX + xDiff, 
+                this.mapOriginY + yDiff, this.getBuildingImageName(tileMap[x][y]));
+            this.buildingImages[x][y] = buildingImage;
+            this.tileMapImages[x][y].setTint(0xffffff);
+            this.tileHighlightActiveX = -1;
+            this.tileHighlightActiveY = -1;
+            this.hoverImage.x = -1000;
+            this.hoverImage.y = -1000;
+        }
+    }
+
+    getBuildingImageName(mapTile) {
+        switch(mapTile.getBuilding().type) {
+            case build.BuildingType.CRATE:
+                return 'crate';
+            case build.BuildingType.CHEST:
+                return 'chest';
+            case build.BuildingType.BOULDER:
+            default:
+                return 'boulder';
         }
     }
 
@@ -139,7 +187,7 @@ export class MapScene extends Phaser.Scene {
             this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTint(0xffffff);
         }
 
-        if (this.areTileCoordinatesValid(tileX, tileY)) {
+        if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].getBuilding() == null) {
             this.tileMapImages[tileX][tileY].setTint(0xff7c73);
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
@@ -147,7 +195,6 @@ export class MapScene extends Phaser.Scene {
             let hoverYDiff = (tileX + tileY) * -blockImageWidth / 2;
             this.hoverImage.x = this.mapOriginX + hoverXDiff;
             this.hoverImage.y = this.mapOriginY + hoverYDiff - blockImageWidth / 4;
-            console.log("x: " + tileX + ", y: " + tileY);
         } else {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;

@@ -1,3 +1,5 @@
+import * as build from './Building';
+
 export const TileType = Object.freeze({ 
     STONE: 0, 
     FULL_GRASS: 1, 
@@ -19,5 +21,13 @@ export function getTileType(index) {
 export class Tile {
     constructor(type) {
         this.type = type;
+    }
+
+    placeBuilding(type) {
+        this.building = new build.Building(type);
+    }
+
+    getBuilding() {
+        return this.building;
     }
 }
