@@ -1,4 +1,6 @@
 import * as state from '../state/CashState';
+import * as map from '../state/MapState';
+import * as tile from '../model/Tile';
 
 const blockImageHeight = 256;
 const blockImageWidth = 128;
@@ -17,21 +19,13 @@ export class MapScene extends Phaser.Scene {
     preload() {
         console.log("preloading MapScene");
         this.load.image('background', 'assets/sprites/background.png');
-        this.load.image('block1', 'assets/sprites/Block_1.png');
-        this.load.image('block2', 'assets/sprites/Block_2.png');
-        this.load.image('block3', 'assets/sprites/Block_3.png');
+        this.load.image('stone', 'assets/sprites/Stone.png');
+        this.load.image('patchy_grass', 'assets/sprites/Patchy_Grass.png');
+        this.load.image('full_grass', 'assets/sprites/Full_Grass.png');
         this.load.image('boulder', 'assets/sprites/Boulder.png');
         this.load.image('chest', 'assets/sprites/Chest.png');
         this.load.image('crate', 'assets/sprites/Crate.png');
 
-        this.tileMap = []
-        this.tileMap.push([1, 2, 2]);
-        this.tileMap.push([1, 3, 1]);
-        this.tileMap.push([3, 2, 3]);
-        this.tileMapImages = [];
-        this.tileMapImages.push([1, 2, 2]);
-        this.tileMapImages.push([1, 3, 1]);
-        this.tileMapImages.push([3, 2, 3]);
         this.mapWidth = 3;
         this.mapHeight = 3;
 
@@ -59,7 +53,7 @@ export class MapScene extends Phaser.Scene {
         //TODO handle really large cash values
         this.add.rectangle(this.game.renderer.width / 2, 25, 200, 50, 0x404040);
         this.add.rectangle(this.game.renderer.width / 2, 65, 150, 30, 0x000000);
-        //TODO commas for cash
+        //TODO comma formatting for cash
         this.currentCashText = this.add.text(this.game.renderer.width / 2, 25, '$' + state.getCurrentCash(), titleTextStyle);
         this.currentCashText.setOrigin(0.5);
         this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '+$' + state.getCashGrowthRate(), subtitleTextStyle);
@@ -75,25 +69,30 @@ export class MapScene extends Phaser.Scene {
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
     // X increases diagonally up and to the right. Y increases diagonally up and to the left.
     createTileMap() {
+        let tileMap = map.initializeMap(this.mapWidth, this.mapHeight);
+        this.tileMapImages = new Array(this.mapWidth);
+
         for (let x = this.mapWidth - 1; x >= 0; x--) {
+            this.tileMapImages[x] = new Array(this.mapHeight);
             for (let y = this.mapHeight - 1; y >= 0; y--) {
                 let xDiff = (x - y) * blockImageWidth;
                 let yDiff = (x + y) * -blockImageWidth / 2;
                 let tileImage = this.add.image(this.mapOriginX + xDiff, 
-                    this.mapOriginY + yDiff, this.getBlockImageName(this.tileMap[x][y]));
+                    this.mapOriginY + yDiff, this.getBlockImageName(tileMap[x][y]));
                 this.tileMapImages[x][y] = tileImage;
             }
         }
     }
 
-    getBlockImageName(index) {
-        switch(index) {
-            case 1:
-                return 'block1';
-            case 2:
-                return 'block2';
-            case 3:
-                return 'block3';
+    getBlockImageName(mapTile) {
+        switch(mapTile.type) {
+            case tile.TileType.STONE:
+                return 'stone';
+            case tile.TileType.FULL_GRASS:
+                return 'full_grass';
+            case tile.TileType.PATCHY_GRASS:
+            default:
+                return 'patchy_grass';
         }
     }
 
