@@ -12,6 +12,8 @@ export class MapScene extends Phaser.Scene {
         super({
             key: "MapScene"
         });
+        // From https://labs.phaser.io/edit.html?src=src/scenes/multiple%20scenes%20from%20classes.js
+        Phaser.Scene.call(this, { key: 'MapScene', active: true });
     }
 
     init() {
@@ -47,22 +49,7 @@ export class MapScene extends Phaser.Scene {
 
         // Hover image
         this.hoverImage = this.add.image(-5000, -5000, 'crate');
-
-        // UI
-        let titleTextStyle = { font: "bold 32px Arial", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
-        let subtitleTextStyle = { font: "bold 24px Arial", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
-
-        //TODO handle really large cash values
-        this.add.rectangle(this.game.renderer.width / 2, 25, 200, 50, 0x404040);
-        this.add.rectangle(this.game.renderer.width / 2, 65, 150, 30, 0x000000);
-        //TODO comma formatting for cash
-        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25, '$' + state.getCurrentCash(), titleTextStyle);
-        this.currentCashText.setOrigin(0.5);
-        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '+$' + state.getCashGrowthRate(), subtitleTextStyle);
-        this.cashGrowthRateText.setOrigin(0.5);
-
-        // Cash growth timer
-        this.lastCashGrowth = -1;
+        this.hoverImage.alpha = 0.65;
 
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
@@ -116,7 +103,6 @@ export class MapScene extends Phaser.Scene {
         let tileMap = map.getMap();
         if (tileMap[x][y].getBuilding() == null) {
             state.setCurrentCash(state.getCurrentCash() - 10);
-            this.currentCashText.setText('$' + state.getCurrentCash());
             let randomBuildingIndex = util.getRandomInt(0, 3);
             tileMap[x][y].placeBuilding(build.getBuildingType(randomBuildingIndex));
             let xDiff = (x - y) * blockImageWidth;
@@ -147,8 +133,9 @@ export class MapScene extends Phaser.Scene {
     addClickCash(event) {
         // Add cash text animation
         //TODO calculating amount to give per click
+        let cashAmount = state.getCashGrowthRate();
         let clickTextStyle = { font: "14px Arial", fill: "#15b800" };
-        let cashClickText = this.add.text(event.upX, event.upY, "$1", clickTextStyle);
+        let cashClickText = this.add.text(event.upX, event.upY, "$" + cashAmount, clickTextStyle);
         this.add.tween({
             targets: [cashClickText],
             ease: 'Sine.easeInOut',
@@ -164,12 +151,8 @@ export class MapScene extends Phaser.Scene {
           });
 
         //TODO calculating amount to give per click
-        this.addCashPerSecond(1);
-    }
-
-    addCashPerSecond(seconds) {
-        state.setCurrentCash(state.getCurrentCash() + (seconds * state.getCashGrowthRate()));
-        this.currentCashText.setText('$' + state.getCurrentCash());
+        // Giving 1 second of cash per click right now
+        state.setCurrentCash(state.getCurrentCash() + cashAmount);
     }
 
     updateTileHighlight(x, y) {
@@ -207,21 +190,8 @@ export class MapScene extends Phaser.Scene {
         return x >= 0 && x < this.mapWidth && y >= 0 && y < this.mapHeight;
     }
 
-    // Add cash every second
+    // Update highlighted tile
     update() {
-        let now = Date.now();
-        if (this.lastCashGrowth === -1) {
-            this.lastCashGrowth = now;
-        }
-        
-        let timePassed = now - this.lastCashGrowth;
-        if (timePassed >= 1000) {
-            let secondsPassed = Math.floor(timePassed / 1000);
-            this.addCashPerSecond(secondsPassed);
-            let timeRemainder = timePassed - (secondsPassed * 1000);
-            this.lastCashGrowth = now - timeRemainder;
-        }
-        
         this.updateTileHighlight(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
     }
 }
