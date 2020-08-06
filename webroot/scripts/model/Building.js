@@ -16,6 +16,19 @@ export function getBuildingType(index) {
     }
 }
 
+export function getBuildingTypeFromName(name) {
+    let lowerName = name.toLowerCase();
+    switch (lowerName) {
+        case 'crate':
+            return BuildingType.CRATE;
+        case 'chest':
+            return BuildingType.CHEST;
+        case 'boulder':
+        default:
+            return BuildingType.BOULDER;
+    }
+}
+
 export class Building {
     constructor(type) {
         this.type = type;

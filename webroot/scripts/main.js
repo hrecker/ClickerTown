@@ -5,8 +5,8 @@ import { UIScene } from "./scenes/UIScene";
 
 var config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 750,
     scene: [
         MapScene,
         UIScene

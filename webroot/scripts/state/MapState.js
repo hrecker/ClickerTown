@@ -2,6 +2,8 @@ import * as Util from '../util/Util';
 import * as Tiles from '../model/Tile';
 
 let map;
+let selectedBuilding;
+let selectedBuildingCallbacks = [];
 
 export function initializeMap(width, height) {
     map = new Array(width);
@@ -19,4 +21,19 @@ export function getMap() {
     return map;
 }
 
-//TODO callbacks on change
+export function setSelectedBuilding(selected) {
+    selectedBuilding = selected;
+    selectedBuildingCallbacks.forEach(callback => 
+        callback.callback(selectedBuilding, callback.scene));
+}
+
+export function getSelectedBuilding() {
+    return selectedBuilding;
+}
+
+export function addSelectedBuildingListener(callback, scene) {
+    selectedBuildingCallbacks.push({ 
+        callback: callback,
+        scene: scene
+    });
+}

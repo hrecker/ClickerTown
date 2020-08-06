@@ -33,7 +33,7 @@ export class MapScene extends Phaser.Scene {
         this.mapWidth = 3;
         this.mapHeight = 3;
 
-        this.mapOriginX = this.game.renderer.width / 2;
+        this.mapOriginX = this.game.renderer.width / 2 - 75;
         this.mapOriginY = this.game.renderer.height / 2 + 100;
         
         this.tileHighlightActiveX = -1;
@@ -42,17 +42,20 @@ export class MapScene extends Phaser.Scene {
 
     create() {
         // Background
-        this.add.image(0, 0, 'background').setOrigin(0, 0);
+        this.add.image(0, 0, 'background').setOrigin(0, 0).setScale(1.5);
 
         // Blocks
         this.createTileMap();
 
         // Hover image
-        this.hoverImage = this.add.image(-5000, -5000, 'crate');
+        this.hoverImage = this.add.image(-5000, -5000, 'boulder');
         this.hoverImage.alpha = 0.65;
 
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
+        
+        // Selected building listener
+        map.addSelectedBuildingListener(this.selectedBuildingListener, this);
     }
 
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
@@ -97,14 +100,17 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
+    selectedBuildingListener(selectedBuilding, scene) {
+        scene.hoverImage.setTexture(selectedBuilding);
+    }
+
     placeBuilding(event) {
         let x = this.tileHighlightActiveX;
         let y = this.tileHighlightActiveY;
         let tileMap = map.getMap();
         if (tileMap[x][y].getBuilding() == null) {
             state.setCurrentCash(state.getCurrentCash() - 10);
-            let randomBuildingIndex = util.getRandomInt(0, 3);
-            tileMap[x][y].placeBuilding(build.getBuildingType(randomBuildingIndex));
+            tileMap[x][y].placeBuilding(build.getBuildingTypeFromName(map.getSelectedBuilding()));
             let xDiff = (x - y) * blockImageWidth;
             let yDiff = ((x + y) * -blockImageWidth / 2) - (blockImageWidth / 4);
             let buildingImage = this.add.image(this.mapOriginX + xDiff, 
