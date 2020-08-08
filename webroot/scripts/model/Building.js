@@ -1,31 +1,31 @@
-export const BuildingType = Object.freeze({ 
-    CRATE: 0, 
-    CHEST: 1, 
-    BOULDER: 2
+export const BuildingType = Object.freeze({
+    YELLOW: 0,
+    RED: 1,
+    BROWN: 2
 });
 
 export function getBuildingType(index) {
     switch (index) {
         case 0:
-            return BuildingType.CRATE;
+            return BuildingType.YELLOW;
         case 1:
-            return BuildingType.CHEST;
+            return BuildingType.RED;
         case 2:
         default:
-            return BuildingType.BOULDER;
+            return BuildingType.BROWN;
     }
 }
 
 export function getBuildingTypeFromName(name) {
     let lowerName = name.toLowerCase();
     switch (lowerName) {
-        case 'crate':
-            return BuildingType.CRATE;
-        case 'chest':
-            return BuildingType.CHEST;
-        case 'boulder':
+        case 'yellow':
+            return BuildingType.YELLOW;
+        case 'red':
+            return BuildingType.RED;
+        case 'brown':
         default:
-            return BuildingType.BOULDER;
+            return BuildingType.BROWN;
     }
 }
 

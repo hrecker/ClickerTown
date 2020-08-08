@@ -1,20 +1,23 @@
 import * as build from './Building';
 
-export const TileType = Object.freeze({ 
-    STONE: 0, 
-    FULL_GRASS: 1, 
-    PATCHY_GRASS: 2
+export const TileType = Object.freeze({
+    CONCRETE: 0,
+    SAND: 1,
+    GRASS: 2,
+    DIRT: 3
 });
 
 export function getTileType(index) {
     switch (index) {
         case 0:
-            return TileType.STONE;
+            return TileType.CONCRETE;
         case 1:
-            return TileType.FULL_GRASS;
+            return TileType.SAND;
         case 2:
+            return TileType.GRASS;
+        case 3:
         default:
-            return TileType.PATCHY_GRASS;
+            return TileType.DIRT;
     }
 }
 

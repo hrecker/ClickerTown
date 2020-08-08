@@ -10,7 +10,7 @@ export function initializeMap(width, height) {
     for (let x = 0; x < width; x++) {
         map[x] = new Array(height);
         for (let y = 0; y < height; y++) {
-            let type = Tiles.getTileType(Util.getRandomInt(0, 3));
+            let type = Tiles.getTileType(Util.getRandomInt(0, Object.keys(Tiles.TileType).length));
             map[x][y] = new Tiles.Tile(type);
         }
     }

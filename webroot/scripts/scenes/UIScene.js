@@ -19,9 +19,9 @@ export class UIScene extends Phaser.Scene {
     preload() {
         console.log("preloading UIScene");
         //TODO don't double load these
-        this.load.image('boulder', 'assets/sprites/Boulder.png');
-        this.load.image('chest', 'assets/sprites/Chest.png');
-        this.load.image('crate', 'assets/sprites/Crate.png');
+        this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
+        this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
+        this.load.image('brown', 'assets/sprites/buildings/buildingTiles_038.png');
     }
 
     create() {
@@ -55,7 +55,7 @@ export class UIScene extends Phaser.Scene {
         let startY = 100;
         let margin = 120;
         let scale = 0.7;
-        this.buildings = [ 'boulder', 'chest', 'crate' ];
+        this.buildings = [ 'yellow', 'red', 'brown' ];
         for (let i = 0; i < this.buildings.length; i++) {
             let buildingBox = this.add.rectangle(this.game.renderer.width - 75, this.getBuildingY(i), 100, 100, 0x000000);
             this.add.image(this.game.renderer.width - 75, this.getBuildingY(i), this.buildings[i]).setScale(scale);

@@ -4,9 +4,9 @@ import * as tile from '../model/Tile';
 import * as build from '../model/Building';
 import * as util from '../util/Util';
 
-const tileScale = 0.4;
-const blockImageHeight = 256 * tileScale;
-const blockImageWidth = 128 * tileScale;
+const tileScale = 1;
+const blockImageHeight = 100 * tileScale;
+const blockImageWidth = 132 * tileScale;
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -23,12 +23,13 @@ export class MapScene extends Phaser.Scene {
 
     preload() {
         console.log("preloading MapScene");
-        this.load.image('stone', 'assets/sprites/Stone.png');
-        this.load.image('patchy_grass', 'assets/sprites/Patchy_Grass.png');
-        this.load.image('full_grass', 'assets/sprites/Full_Grass.png');
-        this.load.image('boulder', 'assets/sprites/Boulder.png');
-        this.load.image('chest', 'assets/sprites/Chest.png');
-        this.load.image('crate', 'assets/sprites/Crate.png');
+        this.load.image('concrete', 'assets/sprites/tiles/cityTiles_072.png');
+        this.load.image('sand', 'assets/sprites/tiles/landscapeTiles_059.png');
+        this.load.image('grass', 'assets/sprites/tiles/landscapeTiles_067.png');
+        this.load.image('dirt', 'assets/sprites/tiles/landscapeTiles_083.png');
+        this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
+        this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
+        this.load.image('brown', 'assets/sprites/buildings/buildingTiles_038.png');
 
         this.mapWidth = 8;
         this.mapHeight = 8;
@@ -48,7 +49,7 @@ export class MapScene extends Phaser.Scene {
         this.createTileMap();
 
         // Hover image
-        this.hoverImage = this.add.image(0, 0, 'boulder').setScale(tileScale);
+        this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale);
         this.hoverImage.alpha = 0;
 
         // Click handler
@@ -84,24 +85,30 @@ export class MapScene extends Phaser.Scene {
             this.tileMapImages[x] = new Array(this.mapHeight);
             this.buildingImages[x] = new Array(this.mapHeight);
             for (let y = this.mapHeight - 1; y >= 0; y--) {
-                let xDiff = (x - y) * blockImageWidth;
-                let yDiff = (x + y) * -blockImageWidth / 2;
+                let xDiff = (x - y) * blockImageWidth / 2;
+                let yDiff = (x + y) * -blockImageWidth / 4;
                 let tileImage = this.add.image(this.mapOriginX + xDiff, 
                     this.mapOriginY + yDiff, this.getBlockImageName(tileMap[x][y])).setScale(tileScale);
                 this.tileMapImages[x][y] = tileImage;
+                let buildingImage = this.add.image(this.mapOriginX + xDiff, 
+                    this.mapOriginY + yDiff - blockImageWidth / 4, 'yellow').setScale(tileScale);
+                buildingImage.setVisible(false);
+                this.buildingImages[x][y] = buildingImage;
             }
         }
     }
 
     getBlockImageName(mapTile) {
         switch(mapTile.type) {
-            case tile.TileType.STONE:
-                return 'stone';
-            case tile.TileType.FULL_GRASS:
-                return 'full_grass';
-            case tile.TileType.PATCHY_GRASS:
+            case tile.TileType.CONCRETE:
+                return 'concrete';
+            case tile.TileType.SAND:
+                return 'sand';
+            case tile.TileType.GRASS:
+                return 'grass';
+            case tile.TileType.DIRT:
             default:
-                return 'patchy_grass';
+                return 'dirt';
         }
     }
 
@@ -126,11 +133,8 @@ export class MapScene extends Phaser.Scene {
         if (tileMap[x][y].getBuilding() == null) {
             state.setCurrentCash(state.getCurrentCash() - 10);
             tileMap[x][y].placeBuilding(build.getBuildingTypeFromName(map.getSelectedBuilding()));
-            let xDiff = (x - y) * blockImageWidth;
-            let yDiff = ((x + y) * -blockImageWidth / 2) - (blockImageWidth / 4);
-            let buildingImage = this.add.image(this.mapOriginX + xDiff, 
-                this.mapOriginY + yDiff, this.getBuildingImageName(tileMap[x][y])).setScale(tileScale);
-            this.buildingImages[x][y] = buildingImage;
+            this.buildingImages[x][y].setVisible(true);
+            this.buildingImages[x][y].setTexture(map.getSelectedBuilding());
             this.tileMapImages[x][y].setTint(0xffffff);
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
@@ -141,13 +145,13 @@ export class MapScene extends Phaser.Scene {
 
     getBuildingImageName(mapTile) {
         switch(mapTile.getBuilding().type) {
-            case build.BuildingType.CRATE:
-                return 'crate';
-            case build.BuildingType.CHEST:
-                return 'chest';
-            case build.BuildingType.BOULDER:
+            case build.BuildingType.YELLOW:
+                return 'yellow';
+            case build.BuildingType.RED:
+                return 'red';
+            case build.BuildingType.BROWN:
             default:
-                return 'boulder';
+                return 'brown';
         }
     }
 
@@ -179,9 +183,12 @@ export class MapScene extends Phaser.Scene {
 
     updateTileHighlight(x, y) {
         let xDiff = x - this.mapOriginX;
-        let yDiff = -1 * (y - this.mapOriginY - (blockImageWidth / 2));
-        let tileX = Math.floor((xDiff / blockImageWidth / 2) + (yDiff / blockImageWidth));
-        let tileY = Math.floor((yDiff / blockImageWidth) - (xDiff / blockImageWidth / 2));
+        let yDiff = -1 * (y - this.mapOriginY + blockImageHeight / 2 - blockImageWidth / 4);
+        
+        // Determine if point is between lines for x=0, x=1, x=2, etc. Line for x=0: x/2 + y = -(blockImageWidth / 4)
+        // Similar for determining if in between y lines. Line for y=0: -x/2 + y = blockImageWidth / 4
+        let tileX = Math.floor((xDiff + 2 * yDiff) / blockImageWidth + 0.5);
+        let tileY = Math.floor((-xDiff + 2 * yDiff) / blockImageWidth + 0.5);
 
         if (tileX == this.tileHighlightActiveX && tileY == this.tileHighlightActiveY) {
             return;
@@ -196,10 +203,10 @@ export class MapScene extends Phaser.Scene {
             this.tileMapImages[tileX][tileY].setTint(0xff7c73);
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
-            let hoverXDiff = (tileX - tileY) * blockImageWidth;
-            let hoverYDiff = (tileX + tileY) * -blockImageWidth / 2;
-            this.hoverImage.x = this.mapOriginX + hoverXDiff;
-            this.hoverImage.y = this.mapOriginY + hoverYDiff - blockImageWidth / 4;
+            let xDiff = (tileX - tileY) * blockImageWidth / 2;
+            let yDiff = (tileX + tileY) * -blockImageWidth / 4;
+            this.hoverImage.x = this.mapOriginX + xDiff;
+            this.hoverImage.y = this.mapOriginY + yDiff - blockImageWidth / 4;
             this.hoverImage.alpha = 0.65;
         } else {
             this.tileHighlightActiveX = -1;
