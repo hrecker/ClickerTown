@@ -1,20 +1,16 @@
 export const BuildingType = Object.freeze({
     YELLOW: 0,
     RED: 1,
-    BROWN: 2
+    BROWN: 2,
+    RED_AWNING: 3,
+    GREEN_AWNING: 4,
+    NO_AWNING: 5,
 });
 
-export function getBuildingType(index) {
-    switch (index) {
-        case 0:
-            return BuildingType.YELLOW;
-        case 1:
-            return BuildingType.RED;
-        case 2:
-        default:
-            return BuildingType.BROWN;
-    }
-}
+export const SpriteType = Object.freeze({
+    TILE_AND_BUILDING: 0,
+    BUILDING_ONLY: 1
+});
 
 export function getBuildingTypeFromName(name) {
     let lowerName = name.toLowerCase();
@@ -24,13 +20,42 @@ export function getBuildingTypeFromName(name) {
         case 'red':
             return BuildingType.RED;
         case 'brown':
-        default:
             return BuildingType.BROWN;
+        case 'red_awning':
+            return BuildingType.RED_AWNING;
+        case 'green_awning':
+            return BuildingType.GREEN_AWNING;
+        default:
+        case 'no_awning':
+            return BuildingType.NO_AWNING;
+    }
+}
+
+export function getBuildingNameFromType(buildingType) {
+    switch(buildingType) {
+        case BuildingType.YELLOW:
+            return 'yellow';
+        case BuildingType.RED:
+            return 'red';
+        case BuildingType.BROWN:
+            return 'brown';
+        case BuildingType.RED_AWNING:
+            return 'red_awning';
+        case BuildingType.GREEN_AWNING:
+            return 'green_awning';
+        default:
+        case BuildingType.NO_AWNING:
+            return 'no_awning';
     }
 }
 
 export class Building {
-    constructor(type) {
-        this.type = type;
+    constructor(buildingType, spriteType) {
+        this.buildingType = buildingType;
+        this.spriteType = spriteType;
+    }
+
+    getName() {
+        return getBuildingNameFromType(this.buildingType);
     }
 }

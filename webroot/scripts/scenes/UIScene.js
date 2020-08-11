@@ -1,5 +1,6 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
+import { Building, BuildingType, SpriteType } from '../model/Building';
 
 const topBuildingY = 100;
 const buildingYMargin = 120;
@@ -22,6 +23,9 @@ export class UIScene extends Phaser.Scene {
         this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
         this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
         this.load.image('brown', 'assets/sprites/buildings/buildingTiles_038.png');
+        this.load.image('red_awning', 'assets/sprites/buildings/buildingTiles_004.png');
+        this.load.image('green_awning', 'assets/sprites/buildings/buildingTiles_018.png');
+        this.load.image('no_awning', 'assets/sprites/buildings/buildingTiles_009.png');
     }
 
     create() {
@@ -52,13 +56,18 @@ export class UIScene extends Phaser.Scene {
         this.add.text(this.game.renderer.width - 120, 25, "Buildings");
 
         // Buildings
-        let startY = 100;
-        let margin = 120;
         let scale = 0.7;
-        this.buildings = [ 'yellow', 'red', 'brown' ];
+        this.buildings = [ 
+            new Building(BuildingType.YELLOW, SpriteType.BUILDING_ONLY),
+            new Building(BuildingType.RED, SpriteType.BUILDING_ONLY),
+            new Building(BuildingType.BROWN, SpriteType.BUILDING_ONLY),
+            new Building(BuildingType.RED_AWNING, SpriteType.TILE_AND_BUILDING),
+            new Building(BuildingType.GREEN_AWNING, SpriteType.TILE_AND_BUILDING),
+            new Building(BuildingType.NO_AWNING, SpriteType.TILE_AND_BUILDING)
+        ];
         for (let i = 0; i < this.buildings.length; i++) {
             let buildingBox = this.add.rectangle(this.game.renderer.width - 75, this.getBuildingY(i), 100, 100, 0x000000);
-            this.add.image(this.game.renderer.width - 75, this.getBuildingY(i), this.buildings[i]).setScale(scale);
+            this.add.image(this.game.renderer.width - 75, this.getBuildingY(i), this.buildings[i].getName()).setScale(scale);
             buildingBox.setInteractive();
 
             buildingBox.on("pointerdown", () => { this.selectBuilding(i) });

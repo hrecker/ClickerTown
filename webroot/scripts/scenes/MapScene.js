@@ -30,12 +30,15 @@ export class MapScene extends Phaser.Scene {
         this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
         this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
         this.load.image('brown', 'assets/sprites/buildings/buildingTiles_038.png');
+        this.load.image('red_awning', 'assets/sprites/buildings/buildingTiles_004.png');
+        this.load.image('green_awning', 'assets/sprites/buildings/buildingTiles_018.png');
+        this.load.image('no_awning', 'assets/sprites/buildings/buildingTiles_009.png');
 
         this.mapWidth = 8;
         this.mapHeight = 8;
 
         this.mapOriginX = this.game.renderer.width / 2 - 75;
-        this.mapOriginY = (this.game.renderer.height / 2) + (this.mapHeight * blockImageHeight / 6);
+        this.mapOriginY = (this.game.renderer.height / 2) + (this.mapHeight * blockImageHeight / 3);
         
         this.tileHighlightActiveX = -1;
         this.tileHighlightActiveY = -1;
@@ -49,8 +52,9 @@ export class MapScene extends Phaser.Scene {
         this.createTileMap();
 
         // Hover image
-        this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale);
+        this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale).setOrigin(0.5, 1);
         this.hoverImage.alpha = 0;
+        this.hoverImageType = build.SpriteType.BUILDING_ONLY;
 
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
@@ -88,10 +92,10 @@ export class MapScene extends Phaser.Scene {
                 let xDiff = (x - y) * blockImageWidth / 2;
                 let yDiff = (x + y) * -blockImageWidth / 4;
                 let tileImage = this.add.image(this.mapOriginX + xDiff, 
-                    this.mapOriginY + yDiff, this.getBlockImageName(tileMap[x][y])).setScale(tileScale);
+                    this.mapOriginY + yDiff, this.getBlockImageName(tileMap[x][y])).setScale(tileScale).setOrigin(0.5, 1);
                 this.tileMapImages[x][y] = tileImage;
                 let buildingImage = this.add.image(this.mapOriginX + xDiff, 
-                    this.mapOriginY + yDiff - blockImageWidth / 4, 'yellow').setScale(tileScale);
+                    this.mapOriginY + yDiff - (0.325 * blockImageWidth), 'yellow').setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
             }
@@ -123,7 +127,10 @@ export class MapScene extends Phaser.Scene {
     }
 
     selectedBuildingListener(selectedBuilding, scene) {
-        scene.hoverImage.setTexture(selectedBuilding);
+        scene.hoverImageType = selectedBuilding.spriteType;
+        if (scene.hoverImageType == build.SpriteType.BUILDING_ONLY) {
+            scene.hoverImage.setTexture(selectedBuilding.getName());
+        }
     }
 
     placeBuilding() {
@@ -132,26 +139,16 @@ export class MapScene extends Phaser.Scene {
         let tileMap = map.getMap();
         if (tileMap[x][y].getBuilding() == null) {
             state.setCurrentCash(state.getCurrentCash() - 10);
-            tileMap[x][y].placeBuilding(build.getBuildingTypeFromName(map.getSelectedBuilding()));
-            this.buildingImages[x][y].setVisible(true);
-            this.buildingImages[x][y].setTexture(map.getSelectedBuilding());
-            this.tileMapImages[x][y].setTint(0xffffff);
+            tileMap[x][y].placeBuilding(map.getSelectedBuilding().buildingType);
+            if (this.hoverImageType == build.SpriteType.TILE_AND_BUILDING) {
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(map.getSelectedBuilding().getName());
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
+            } else {
+                this.buildingImages[x][y].setVisible(true);
+                this.buildingImages[x][y].setTexture(map.getSelectedBuilding().getName());
+            }
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
-            this.hoverImage.x = -1000;
-            this.hoverImage.y = -1000;
-        }
-    }
-
-    getBuildingImageName(mapTile) {
-        switch(mapTile.getBuilding().type) {
-            case build.BuildingType.YELLOW:
-                return 'yellow';
-            case build.BuildingType.RED:
-                return 'red';
-            case build.BuildingType.BROWN:
-            default:
-                return 'brown';
         }
     }
 
@@ -187,8 +184,8 @@ export class MapScene extends Phaser.Scene {
         
         // Determine if point is between lines for x=0, x=1, x=2, etc. Line for x=0: x/2 + y = -(blockImageWidth / 4)
         // Similar for determining if in between y lines. Line for y=0: -x/2 + y = blockImageWidth / 4
-        let tileX = Math.floor((xDiff + 2 * yDiff) / blockImageWidth + 0.5);
-        let tileY = Math.floor((-xDiff + 2 * yDiff) / blockImageWidth + 0.5);
+        let tileX = Math.floor((xDiff + 2 * yDiff) / blockImageWidth - 0.25);
+        let tileY = Math.floor((-xDiff + 2 * yDiff) / blockImageWidth - 0.25);
 
         if (tileX == this.tileHighlightActiveX && tileY == this.tileHighlightActiveY) {
             return;
@@ -196,18 +193,26 @@ export class MapScene extends Phaser.Scene {
 
         // Update tints
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
-            this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTint(0xffffff);
+            if (this.hoverImageType == build.SpriteType.TILE_AND_BUILDING) {
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(
+                    this.getBlockImageName(map.getMap()[this.tileHighlightActiveX][this.tileHighlightActiveY]));
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
+            }
         }
 
         if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].getBuilding() == null) {
-            this.tileMapImages[tileX][tileY].setTint(0xff7c73);
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
-            let xDiff = (tileX - tileY) * blockImageWidth / 2;
-            let yDiff = (tileX + tileY) * -blockImageWidth / 4;
-            this.hoverImage.x = this.mapOriginX + xDiff;
-            this.hoverImage.y = this.mapOriginY + yDiff - blockImageWidth / 4;
-            this.hoverImage.alpha = 0.65;
+            if (this.hoverImageType == build.SpriteType.BUILDING_ONLY) {
+                let xDiff = (tileX - tileY) * blockImageWidth / 2;
+                let yDiff = (tileX + tileY) * -blockImageWidth / 4;
+                this.hoverImage.x = this.mapOriginX + xDiff;
+                this.hoverImage.y = this.mapOriginY + yDiff - (0.325 * blockImageWidth);
+                this.hoverImage.alpha = 0.65;
+            } else {
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(map.getSelectedBuilding().getName());
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 0.65;
+            }
         } else {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
