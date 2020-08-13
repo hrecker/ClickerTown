@@ -7,6 +7,8 @@ import { ShopSelectionType, getShopSelection, addShopSelectionListener } from '.
 const tileScale = 1;
 const blockImageHeight = 100 * tileScale;
 const blockImageWidth = 132 * tileScale;
+const buildingYDiff = 0.325 * -blockImageWidth;
+const hoverImageAlpha = 0.65;
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -88,15 +90,13 @@ export class MapScene extends Phaser.Scene {
             this.tileMapImages[x] = new Array(this.mapHeight);
             this.buildingImages[x] = new Array(this.mapHeight);
             for (let y = this.mapHeight - 1; y >= 0; y--) {
-                let xDiff = (x - y) * blockImageWidth / 2;
-                let yDiff = (x + y) * -blockImageWidth / 4;
-                let tileImage = this.add.image(this.mapOriginX + xDiff, 
-                    this.mapOriginY + yDiff, tileMap[x][y].getTileName()).setScale(tileScale).setOrigin(0.5, 1);
+                let tileCoords = this.getTileWorldCoordinates(x, y);
+                let tileImage = this.add.image(tileCoords.x, tileCoords.y, 
+                    tileMap[x][y].getTileName()).setScale(tileScale).setOrigin(0.5, 1);
                 this.tileMapImages[x][y] = tileImage;
                 // Add a placeholder building image to be replaced when necessary
-                let buildingImage = this.add.image(this.mapOriginX + xDiff, 
-                    this.mapOriginY + yDiff - (0.325 * blockImageWidth), tileMap[x][y].getTileName()).
-                    setScale(tileScale).setOrigin(0.5, 1);
+                let buildingImage = this.add.image(tileCoords.x, tileCoords.y + buildingYDiff,
+                    tileMap[x][y].getTileName()).setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
             }
@@ -176,7 +176,7 @@ export class MapScene extends Phaser.Scene {
 
     updateTileHighlight(x, y) {
         let xDiff = x - this.mapOriginX;
-        let yDiff = -1 * (y - this.mapOriginY + blockImageHeight / 2 - blockImageWidth / 4);
+        let yDiff = (this.mapOriginY - blockImageHeight / 2 + blockImageWidth / 4) - y;
         
         // Determine if point is between lines for x=0, x=1, x=2, etc. Line for x=0: x/2 + y = -(blockImageWidth / 4)
         // Similar for determining if in between y lines. Line for y=0: -x/2 + y = blockImageWidth / 4
@@ -199,13 +199,12 @@ export class MapScene extends Phaser.Scene {
                 (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].getTileName() != getShopSelection().getName())) {
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
-            let xDiff = (tileX - tileY) * blockImageWidth / 2;
-            let yDiff = (tileX + tileY) * -blockImageWidth / 4;
-            this.hoverImage.x = this.mapOriginX + xDiff;
-            this.hoverImage.y = this.mapOriginY + yDiff;// - (0.325 * blockImageWidth);
-            this.hoverImage.alpha = 0.65;
+            let tileCoords = this.getTileWorldCoordinates(tileX, tileY);
+            this.hoverImage.x = tileCoords.x;
+            this.hoverImage.y = tileCoords.y;
+            this.hoverImage.alpha = hoverImageAlpha;
             if (this.hoverImageType == ShopSelectionType.BUILDING_ONLY) {
-                this.hoverImage.y -= (0.325 * blockImageWidth);
+                this.hoverImage.y += buildingYDiff;
             } else {
                 this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 0;
             }
@@ -214,6 +213,12 @@ export class MapScene extends Phaser.Scene {
             this.tileHighlightActiveY = -1;
             this.hoverImage.alpha = 0;
         }
+    }
+
+    getTileWorldCoordinates(tileX, tileY) {
+        let xDiff = (tileX - tileY) * blockImageWidth / 2;
+        let yDiff = (tileX + tileY) * -blockImageWidth / 4;
+        return new Phaser.Math.Vector2(this.mapOriginX + xDiff, this.mapOriginY + yDiff);
     }
 
     areTileCoordinatesValid(x, y) {
