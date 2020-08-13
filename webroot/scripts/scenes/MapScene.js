@@ -2,7 +2,7 @@ import * as state from '../state/CashState';
 import * as map from '../state/MapState';
 import * as tile from '../model/Tile';
 import * as build from '../model/Building';
-import * as util from '../util/Util';
+import { ShopSelectionType, getShopSelection, addShopSelectionListener } from '../state/UIState';
 
 const tileScale = 1;
 const blockImageHeight = 100 * tileScale;
@@ -29,7 +29,6 @@ export class MapScene extends Phaser.Scene {
         this.load.image('dirt', 'assets/sprites/tiles/landscapeTiles_083.png');
         this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
         this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
-        this.load.image('brown', 'assets/sprites/buildings/buildingTiles_038.png');
         this.load.image('red_awning', 'assets/sprites/buildings/buildingTiles_004.png');
         this.load.image('green_awning', 'assets/sprites/buildings/buildingTiles_018.png');
         this.load.image('no_awning', 'assets/sprites/buildings/buildingTiles_009.png');
@@ -54,13 +53,13 @@ export class MapScene extends Phaser.Scene {
         // Hover image
         this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale).setOrigin(0.5, 1);
         this.hoverImage.alpha = 0;
-        this.hoverImageType = build.SpriteType.BUILDING_ONLY;
+        this.hoverImageType = ShopSelectionType.BUILDING_ONLY;
 
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
         
-        // Selected building listener
-        map.addSelectedBuildingListener(this.selectedBuildingListener, this);
+        // Shop selection listener
+        addShopSelectionListener(this.shopSelectionListener, this);
 
         // Camera control
         var controlConfig = {
@@ -92,60 +91,57 @@ export class MapScene extends Phaser.Scene {
                 let xDiff = (x - y) * blockImageWidth / 2;
                 let yDiff = (x + y) * -blockImageWidth / 4;
                 let tileImage = this.add.image(this.mapOriginX + xDiff, 
-                    this.mapOriginY + yDiff, this.getBlockImageName(tileMap[x][y])).setScale(tileScale).setOrigin(0.5, 1);
+                    this.mapOriginY + yDiff, tileMap[x][y].getTileName()).setScale(tileScale).setOrigin(0.5, 1);
                 this.tileMapImages[x][y] = tileImage;
+                // Add a placeholder building image to be replaced when necessary
                 let buildingImage = this.add.image(this.mapOriginX + xDiff, 
-                    this.mapOriginY + yDiff - (0.325 * blockImageWidth), 'yellow').setScale(tileScale).setOrigin(0.5, 1);
+                    this.mapOriginY + yDiff - (0.325 * blockImageWidth), tileMap[x][y].getTileName()).
+                    setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
             }
         }
     }
 
-    getBlockImageName(mapTile) {
-        switch(mapTile.type) {
-            case tile.TileType.CONCRETE:
-                return 'concrete';
-            case tile.TileType.SAND:
-                return 'sand';
-            case tile.TileType.GRASS:
-                return 'grass';
-            case tile.TileType.DIRT:
-            default:
-                return 'dirt';
-        }
-    }
-
     handleClick(event) {
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
-            // If highlighting a tile, build building
-            this.placeBuilding();
+            // If highlighting a tile, build the shop selection
+            this.placeShopSelection();
         } else {
             // Otherwise add cash
             this.addClickCash(event);
         }
     }
 
-    selectedBuildingListener(selectedBuilding, scene) {
-        scene.hoverImageType = selectedBuilding.spriteType;
-        if (scene.hoverImageType == build.SpriteType.BUILDING_ONLY) {
-            scene.hoverImage.setTexture(selectedBuilding.getName());
-        }
+    shopSelectionListener(shopSelection, scene) {
+        scene.hoverImageType = shopSelection.selectionType;
+        scene.hoverImage.setTexture(shopSelection.getName());
     }
 
-    placeBuilding() {
+    placeShopSelection() {
         let x = this.tileHighlightActiveX;
         let y = this.tileHighlightActiveY;
         let tileMap = map.getMap();
-        if (tileMap[x][y].getBuilding() == null) {
+        // Can only modify/place tiles or buildings on tiles that don't have a building already
+        // and do not match the tile being placed
+        if (tileMap[x][y].getBuilding() == null && 
+                (this.hoverImageType != ShopSelectionType.TILE_ONLY || tileMap[x][y].getTileName() != getShopSelection().getName())) {
+            //TODO building price
             state.setCurrentCash(state.getCurrentCash() - 10);
-            tileMap[x][y].placeBuilding(map.getSelectedBuilding().buildingType);
-            if (this.hoverImageType == build.SpriteType.TILE_AND_BUILDING) {
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(map.getSelectedBuilding().getName());
+            // Update the tileMap
+            if (this.hoverImageType != ShopSelectionType.TILE_ONLY) {
+                tileMap[x][y].placeBuilding(build.getBuildingTypeFromName(getShopSelection().buildingName));
+            } 
+            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
+                tileMap[x][y].type = tile.getTileTypeFromName(getShopSelection().tileName);
+            }
+            // Update displayed sprites
+            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(getShopSelection().getName());
                 this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
             } else {
                 this.buildingImages[x][y].setVisible(true);
-                this.buildingImages[x][y].setTexture(map.getSelectedBuilding().getName());
+                this.buildingImages[x][y].setTexture(getShopSelection().getName());
             }
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
@@ -191,27 +187,27 @@ export class MapScene extends Phaser.Scene {
             return;
         }
 
-        // Update tints
+        // Reset tile image and alpha
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
-            if (this.hoverImageType == build.SpriteType.TILE_AND_BUILDING) {
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(
-                    this.getBlockImageName(map.getMap()[this.tileHighlightActiveX][this.tileHighlightActiveY]));
+            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
                 this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
             }
         }
 
-        if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].getBuilding() == null) {
+        // Update hover image or tile image and alpha
+        if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].getBuilding() == null && 
+                (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].getTileName() != getShopSelection().getName())) {
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
-            if (this.hoverImageType == build.SpriteType.BUILDING_ONLY) {
-                let xDiff = (tileX - tileY) * blockImageWidth / 2;
-                let yDiff = (tileX + tileY) * -blockImageWidth / 4;
-                this.hoverImage.x = this.mapOriginX + xDiff;
-                this.hoverImage.y = this.mapOriginY + yDiff - (0.325 * blockImageWidth);
-                this.hoverImage.alpha = 0.65;
+            let xDiff = (tileX - tileY) * blockImageWidth / 2;
+            let yDiff = (tileX + tileY) * -blockImageWidth / 4;
+            this.hoverImage.x = this.mapOriginX + xDiff;
+            this.hoverImage.y = this.mapOriginY + yDiff;// - (0.325 * blockImageWidth);
+            this.hoverImage.alpha = 0.65;
+            if (this.hoverImageType == ShopSelectionType.BUILDING_ONLY) {
+                this.hoverImage.y -= (0.325 * blockImageWidth);
             } else {
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(map.getSelectedBuilding().getName());
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 0.65;
+                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 0;
             }
         } else {
             this.tileHighlightActiveX = -1;

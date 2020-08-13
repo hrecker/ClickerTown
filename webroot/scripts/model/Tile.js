@@ -21,16 +21,49 @@ export function getTileType(index) {
     }
 }
 
+export function getTileTypeFromName(name) {
+    switch(name) {
+        case 'concrete':
+            return TileType.CONCRETE;
+        case 'sand':
+            return TileType.SAND;
+        case 'grass':
+            return TileType.GRASS;
+        case 'dirt':
+        default:
+            return TileType.DIRT;
+    }
+}
+
+export function getNameFromTileType(type) {
+    switch(type) {
+        case TileType.CONCRETE:
+            return 'concrete';
+        case TileType.SAND:
+            return 'sand';
+        case TileType.GRASS:
+            return 'grass';
+        case TileType.DIRT:
+        default:
+            return 'dirt';
+    }
+}
+
 export class Tile {
     constructor(type) {
         this.type = type;
     }
 
+    //TODO shouldn't need to construct the building here
     placeBuilding(type) {
         this.building = new build.Building(type);
     }
 
     getBuilding() {
         return this.building;
+    }
+
+    getTileName() {
+        return getNameFromTileType(this.type);
     }
 }

@@ -1,9 +1,8 @@
 import * as state from '../state/CashState';
-import * as map from '../state/MapState';
-import { Building, BuildingType, SpriteType } from '../model/Building';
+import { ShopSelection, ShopSelectionType, setShopSelection } from '../state/UIState';
 
-const topBuildingY = 100;
-const buildingYMargin = 120;
+const topShopSelectionY = 100;
+const shopSelectionMargin = 120;
 
 export class UIScene extends Phaser.Scene {
     constructor() {
@@ -22,14 +21,13 @@ export class UIScene extends Phaser.Scene {
         //TODO don't double load these
         this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
         this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
-        this.load.image('brown', 'assets/sprites/buildings/buildingTiles_038.png');
+        this.load.image('grass', 'assets/sprites/tiles/landscapeTiles_067.png');
         this.load.image('red_awning', 'assets/sprites/buildings/buildingTiles_004.png');
         this.load.image('green_awning', 'assets/sprites/buildings/buildingTiles_018.png');
         this.load.image('no_awning', 'assets/sprites/buildings/buildingTiles_009.png');
     }
 
     create() {
-        
         // UI
         let titleTextStyle = { font: "bold 32px Arial", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
         let subtitleTextStyle = { font: "bold 24px Arial", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
@@ -51,43 +49,43 @@ export class UIScene extends Phaser.Scene {
         // Cash growth timer
         this.lastCashGrowth = -1;
 
-        // Building selection UI
+        // Shop selection UI
         this.add.rectangle(this.game.renderer.width - 75, this.game.renderer.height / 2, 150, this.game.renderer.height, 0x404040);
-        this.add.text(this.game.renderer.width - 120, 25, "Buildings");
+        this.add.text(this.game.renderer.width - 120, 25, "Shop");
 
-        // Buildings
+        // Shop
         let scale = 0.7;
-        this.buildings = [ 
-            new Building(BuildingType.YELLOW, SpriteType.BUILDING_ONLY),
-            new Building(BuildingType.RED, SpriteType.BUILDING_ONLY),
-            new Building(BuildingType.BROWN, SpriteType.BUILDING_ONLY),
-            new Building(BuildingType.RED_AWNING, SpriteType.TILE_AND_BUILDING),
-            new Building(BuildingType.GREEN_AWNING, SpriteType.TILE_AND_BUILDING),
-            new Building(BuildingType.NO_AWNING, SpriteType.TILE_AND_BUILDING)
+        this.shopItems = [ 
+            new ShopSelection(ShopSelectionType.BUILDING_ONLY, null, 'yellow'),
+            new ShopSelection(ShopSelectionType.BUILDING_ONLY, null, 'red'),
+            new ShopSelection(ShopSelectionType.TILE_ONLY, 'grass', null),
+            new ShopSelection(ShopSelectionType.TILE_AND_BUILDING, 'concrete', 'red_awning'),
+            new ShopSelection(ShopSelectionType.TILE_AND_BUILDING, 'concrete', 'green_awning'),
+            new ShopSelection(ShopSelectionType.TILE_AND_BUILDING, 'concrete', 'no_awning')
         ];
-        for (let i = 0; i < this.buildings.length; i++) {
-            let buildingBox = this.add.rectangle(this.game.renderer.width - 75, this.getBuildingY(i), 100, 100, 0x000000);
-            this.add.image(this.game.renderer.width - 75, this.getBuildingY(i), this.buildings[i].getName()).setScale(scale);
-            buildingBox.setInteractive();
+        for (let i = 0; i < this.shopItems.length; i++) {
+            let selectionBox = this.add.rectangle(this.game.renderer.width - 75, this.getSelectionY(i), 100, 100, 0x000000);
+            this.add.image(this.game.renderer.width - 75, this.getSelectionY(i), this.shopItems[i].getName()).setScale(scale);
+            selectionBox.setInteractive();
 
-            buildingBox.on("pointerdown", () => { this.selectBuilding(i) });
+            selectionBox.on("pointerdown", () => { this.selectShopItem(i) });
         }
 
-        // Selected building highlight
-        this.buildingHighlight = this.add.rectangle(this.game.renderer.width - 75, this.getBuildingY(0), 110, 100);
-        this.buildingHighlight.isFilled = false;
-        this.buildingHighlight.setStrokeStyle(10, 0xFFFFFF);
+        // Shop selection highlight
+        this.shopHighlight = this.add.rectangle(this.game.renderer.width - 75, this.getSelectionY(0), 110, 100);
+        this.shopHighlight.isFilled = false;
+        this.shopHighlight.setStrokeStyle(10, 0xFFFFFF);
 
-        this.selectBuilding(0);
+        this.selectShopItem(0);
     }
 
-    getBuildingY(index) {
-        return topBuildingY + (index * buildingYMargin);
+    getSelectionY(index) {
+        return topShopSelectionY + (index * shopSelectionMargin);
     }
 
-    selectBuilding(index) {
-        this.buildingHighlight.y = this.getBuildingY(index);
-        map.setSelectedBuilding(this.buildings[index]);
+    selectShopItem(index) {
+        this.shopHighlight.y = this.getSelectionY(index);
+        setShopSelection(this.shopItems[index]);
     }
 
     cashChangeListener(cash, scene) {

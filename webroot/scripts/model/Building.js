@@ -5,11 +5,7 @@ export const BuildingType = Object.freeze({
     RED_AWNING: 3,
     GREEN_AWNING: 4,
     NO_AWNING: 5,
-});
-
-export const SpriteType = Object.freeze({
-    TILE_AND_BUILDING: 0,
-    BUILDING_ONLY: 1
+    GRASS: 6
 });
 
 export function getBuildingTypeFromName(name) {
@@ -25,9 +21,11 @@ export function getBuildingTypeFromName(name) {
             return BuildingType.RED_AWNING;
         case 'green_awning':
             return BuildingType.GREEN_AWNING;
-        default:
         case 'no_awning':
             return BuildingType.NO_AWNING;
+        default:
+        case 'grass':
+            return BuildingType.GRASS;
     }
 }
 
@@ -43,16 +41,17 @@ export function getBuildingNameFromType(buildingType) {
             return 'red_awning';
         case BuildingType.GREEN_AWNING:
             return 'green_awning';
-        default:
         case BuildingType.NO_AWNING:
             return 'no_awning';
+        default:
+        case BuildingType.GRASS:
+            return 'grass';
     }
 }
 
 export class Building {
-    constructor(buildingType, spriteType) {
+    constructor(buildingType) {
         this.buildingType = buildingType;
-        this.spriteType = spriteType;
     }
 
     getName() {
