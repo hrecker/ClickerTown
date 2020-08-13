@@ -15,8 +15,6 @@ export class MapScene extends Phaser.Scene {
         super({
             key: "MapScene"
         });
-        // From https://labs.phaser.io/edit.html?src=src/scenes/multiple%20scenes%20from%20classes.js
-        Phaser.Scene.call(this, { key: 'MapScene', active: true });
     }
 
     init() {
@@ -24,17 +22,10 @@ export class MapScene extends Phaser.Scene {
     }
 
     preload() {
-        console.log("preloading MapScene");
-        this.load.image('concrete', 'assets/sprites/tiles/cityTiles_072.png');
-        this.load.image('sand', 'assets/sprites/tiles/landscapeTiles_059.png');
-        this.load.image('grass', 'assets/sprites/tiles/landscapeTiles_067.png');
-        this.load.image('dirt', 'assets/sprites/tiles/landscapeTiles_083.png');
-        this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
-        this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
-        this.load.image('red_awning', 'assets/sprites/buildings/buildingTiles_004.png');
-        this.load.image('green_awning', 'assets/sprites/buildings/buildingTiles_018.png');
-        this.load.image('no_awning', 'assets/sprites/buildings/buildingTiles_009.png');
+        
+    }
 
+    create() {
         this.mapWidth = 8;
         this.mapHeight = 8;
 
@@ -43,9 +34,7 @@ export class MapScene extends Phaser.Scene {
         
         this.tileHighlightActiveX = -1;
         this.tileHighlightActiveY = -1;
-    }
 
-    create() {
         // Background
         this.cameras.main.setBackgroundColor("#4287f5");
 

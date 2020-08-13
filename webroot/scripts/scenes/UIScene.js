@@ -9,7 +9,6 @@ export class UIScene extends Phaser.Scene {
         super({
             key: "UIScene"
         });
-        Phaser.Scene.call(this, { key: 'UIScene', active: true });
     }
 
     init() {
@@ -17,14 +16,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     preload() {
-        console.log("preloading UIScene");
-        //TODO don't double load these
-        this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
-        this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
-        this.load.image('grass', 'assets/sprites/tiles/landscapeTiles_067.png');
-        this.load.image('red_awning', 'assets/sprites/buildings/buildingTiles_004.png');
-        this.load.image('green_awning', 'assets/sprites/buildings/buildingTiles_018.png');
-        this.load.image('no_awning', 'assets/sprites/buildings/buildingTiles_009.png');
+
     }
 
     create() {
