@@ -1,0 +1,29 @@
+{
+    "Convenience Store": {
+        "name": "Convenience Store",
+        "tileName": "Concrete",
+        "sprite": "buildingTiles_004.png",
+        "cost": 20,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 2,
+        "baseClickValue": 0
+    },
+    "Restaurant": {
+        "name": "Restaurant",
+        "tileName": "Concrete",
+        "sprite": "buildingTiles_018.png",
+        "cost": 25,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 2,
+        "baseClickValue": 0.2
+    },
+    "Bank": {
+        "name": "Bank",
+        "tileName": "Concrete",
+        "sprite": "buildingTiles_009.png",
+        "cost": 100,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 15,
+        "baseClickValue": 0.5
+    }
+}

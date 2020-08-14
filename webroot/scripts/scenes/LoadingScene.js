@@ -1,3 +1,4 @@
+// Load json and assets
 export class LoadingScene extends Phaser.Scene {
     constructor() {
         super({
@@ -5,24 +6,30 @@ export class LoadingScene extends Phaser.Scene {
         });
     }
 
-    init() {
-
-    }
-
     preload() {
-        console.log("LoadingScene starting");
-        this.load.image('concrete', 'assets/sprites/tiles/cityTiles_072.png');
-        this.load.image('sand', 'assets/sprites/tiles/landscapeTiles_059.png');
-        this.load.image('grass', 'assets/sprites/tiles/landscapeTiles_067.png');
-        this.load.image('dirt', 'assets/sprites/tiles/landscapeTiles_083.png');
-        this.load.image('yellow', 'assets/sprites/buildings/buildingTiles_008.png');
-        this.load.image('red', 'assets/sprites/buildings/buildingTiles_016.png');
-        this.load.image('red_awning', 'assets/sprites/buildings/buildingTiles_004.png');
-        this.load.image('green_awning', 'assets/sprites/buildings/buildingTiles_018.png');
-        this.load.image('no_awning', 'assets/sprites/buildings/buildingTiles_009.png');
+        // Load initial json values
+        this.load.json('buildings', 'assets/data/buildings.json');
+        this.load.json('initials', 'assets/data/initials.json');
+        this.load.json('tiles', 'assets/data/tiles.json');
     }
 
     create() {
-        this.scene.start("MapScene").start("UIScene").stop();
+        // Load assets
+        // Building sprites
+        for (let buildingName in this.cache.json.get('buildings')) {
+            let building = this.cache.json.get('buildings')[buildingName];
+            this.load.image(building['name'], 'assets/sprites/buildings/' + building['sprite']);
+        }
+
+        // Tile sprites
+        for (let tileName in this.cache.json.get('tiles')) {
+            let tile = this.cache.json.get('tiles')[tileName];
+            this.load.image(tileName, 'assets/sprites/tiles/' + tile['sprite']);
+        }
+        
+        this.load.start();
+        this.load.once('complete', () => {
+            this.scene.start("MapScene").start("UIScene").stop();
+        });
     }
 }

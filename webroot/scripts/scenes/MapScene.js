@@ -1,6 +1,5 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
-import * as tile from '../model/Tile';
 import * as build from '../model/Building';
 import { ShopSelectionType, getShopSelection, addShopSelectionListener } from '../state/UIState';
 
@@ -15,14 +14,6 @@ export class MapScene extends Phaser.Scene {
         super({
             key: "MapScene"
         });
-    }
-
-    init() {
-
-    }
-
-    preload() {
-        
     }
 
     create() {
@@ -71,7 +62,7 @@ export class MapScene extends Phaser.Scene {
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
     // X increases diagonally up and to the right. Y increases diagonally up and to the left.
     createTileMap() {
-        let tileMap = map.initializeMap(this.mapWidth, this.mapHeight);
+        let tileMap = map.initializeMap(this.cache.json.get('tiles'), this.mapWidth, this.mapHeight);
         this.tileMapImages = new Array(this.mapWidth);
         this.buildingImages = new Array(this.mapWidth);
 
@@ -81,11 +72,11 @@ export class MapScene extends Phaser.Scene {
             for (let y = this.mapHeight - 1; y >= 0; y--) {
                 let tileCoords = this.getTileWorldCoordinates(x, y);
                 let tileImage = this.add.image(tileCoords.x, tileCoords.y, 
-                    tileMap[x][y].getTileName()).setScale(tileScale).setOrigin(0.5, 1);
+                    tileMap[x][y].name).setScale(tileScale).setOrigin(0.5, 1);
                 this.tileMapImages[x][y] = tileImage;
                 // Add a placeholder building image to be replaced when necessary
                 let buildingImage = this.add.image(tileCoords.x, tileCoords.y + buildingYDiff,
-                    tileMap[x][y].getTileName()).setScale(tileScale).setOrigin(0.5, 1);
+                    tileMap[x][y].name).setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
             }
@@ -113,16 +104,18 @@ export class MapScene extends Phaser.Scene {
         let tileMap = map.getMap();
         // Can only modify/place tiles or buildings on tiles that don't have a building already
         // and do not match the tile being placed
-        if (tileMap[x][y].getBuilding() == null && 
-                (this.hoverImageType != ShopSelectionType.TILE_ONLY || tileMap[x][y].getTileName() != getShopSelection().getName())) {
+        if (tileMap[x][y].building == null && 
+                (this.hoverImageType != ShopSelectionType.TILE_ONLY || tileMap[x][y].name != getShopSelection().getName())) {
             //TODO building price
-            state.setCurrentCash(state.getCurrentCash() - 10);
+            state.addCurrentCash(-10);
             // Update the tileMap
             if (this.hoverImageType != ShopSelectionType.TILE_ONLY) {
-                tileMap[x][y].placeBuilding(build.getBuildingTypeFromName(getShopSelection().buildingName));
+                tileMap[x][y].building = getShopSelection().buildingName;
+                // Update cash per second and click cash
+                this.updateCashRates();
             } 
             if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
-                tileMap[x][y].type = tile.getTileTypeFromName(getShopSelection().tileName);
+                tileMap[x][y].type = getShopSelection().tileName;
             }
             // Update displayed sprites
             if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
@@ -137,13 +130,25 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
+    updateCashRates() {
+        let tileMap = map.getMap();
+        let cashGrowthRate = this.cache.json.get('initials')['startingGrowthRate'];
+        let clickValue = this.cache.json.get('initials')['startingClickValue'];
+        for (let x = 0; x < tileMap.length; x++) {
+            for (let y = 0; y < tileMap[0].length; y++) {
+                cashGrowthRate += build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), tileMap, x, y);
+                clickValue += build.getBuildingClickValue(this.cache.json.get('buildings'), tileMap, x, y);
+            }
+        }
+        state.setCashGrowthRate(cashGrowthRate);
+        state.setClickCashValue(clickValue);
+    }
+
     addClickCash(event) {
         // Add cash text animation
-        //TODO calculating amount to give per click
-        let cashAmount = state.getCashGrowthRate();
         let clickTextStyle = { font: "48px Arial", fill: "#15b800" };
         let cashClickText = this.game.scene.getScene('UIScene').add.text(
-            event.upX, event.upY, "$" + cashAmount, clickTextStyle);
+            event.upX, event.upY, "$" + state.getClickCashValue(), clickTextStyle);
         this.add.tween({
             targets: [cashClickText],
             ease: 'Sine.easeInOut',
@@ -158,9 +163,7 @@ export class MapScene extends Phaser.Scene {
             }
           });
 
-        //TODO calculating amount to give per click
-        // Giving 1 second of cash per click right now
-        state.setCurrentCash(state.getCurrentCash() + cashAmount);
+        state.addCurrentCash(state.getClickCashValue());
     }
 
     updateTileHighlight(x, y) {
@@ -184,8 +187,8 @@ export class MapScene extends Phaser.Scene {
         }
 
         // Update hover image or tile image and alpha
-        if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].getBuilding() == null && 
-                (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].getTileName() != getShopSelection().getName())) {
+        if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].building == null && 
+                (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].name != getShopSelection().getName())) {
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
             let tileCoords = this.getTileWorldCoordinates(tileX, tileY);

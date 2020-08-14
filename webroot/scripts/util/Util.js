@@ -4,3 +4,9 @@ export function getRandomInt(min, max) {
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
 }
+
+// https://stackoverflow.com/questions/2532218/pick-random-property-from-a-javascript-object
+export function getRandomProperty(obj) {
+    let keys = Object.keys(obj);
+    return obj[keys[ keys.length * Math.random() << 0]];
+};

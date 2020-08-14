@@ -1,0 +1,7 @@
+{
+    "startingCash": 50,
+    "startingGrowthRate": 1,
+    "startingClickValue": 1,
+    "mapWidth": 8,
+    "mapHeight": 8
+}

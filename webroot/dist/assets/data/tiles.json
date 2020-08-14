@@ -1,0 +1,30 @@
+{
+    "Concrete": {
+        "name": "Concrete",
+        "sprite": "cityTiles_072.png",
+        "cost": 2,
+        "baseCashGrowthRate": -1,
+        "baseClickValue": 0
+    },
+    "Grass": {
+        "name": "Grass",
+        "sprite": "landscapeTiles_067.png",
+        "cost": 1,
+        "baseCashGrowthRate": 0.1,
+        "baseClickValue": 0
+    },
+    "Dirt": {
+        "name": "Dirt",
+        "sprite": "landscapeTiles_083.png",
+        "cost": 0.5,
+        "baseCashGrowthRate": 0,
+        "baseClickValue": 0
+    },
+    "Sand": {
+        "name": "Sand",
+        "sprite": "landscapeTiles_059.png",
+        "cost": 0.5,
+        "baseCashGrowthRate": 0,
+        "baseClickValue": 0
+    }
+}

@@ -11,14 +11,6 @@ export class UIScene extends Phaser.Scene {
         });
     }
 
-    init() {
-
-    }
-
-    preload() {
-
-    }
-
     create() {
         // UI
         let titleTextStyle = { font: "bold 32px Arial", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
@@ -35,8 +27,9 @@ export class UIScene extends Phaser.Scene {
         this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '+$' + state.getCashGrowthRate(), subtitleTextStyle);
         this.cashGrowthRateText.setOrigin(0.5);
 
-        // Cash change listener
+        // Cash listeners
         state.addCurrentCashListener(this.cashChangeListener, this);
+        state.addCashGrowthListener(this.cashGrowthListener, this);
 
         // Cash growth timer
         this.lastCashGrowth = -1;
@@ -45,16 +38,16 @@ export class UIScene extends Phaser.Scene {
         this.add.rectangle(this.game.renderer.width - 75, this.game.renderer.height / 2, 150, this.game.renderer.height, 0x404040);
         this.add.text(this.game.renderer.width - 120, 25, "Shop");
 
-        // Shop
+        // Shop selections
         let scale = 0.7;
-        this.shopItems = [ 
-            new ShopSelection(ShopSelectionType.BUILDING_ONLY, null, 'yellow'),
-            new ShopSelection(ShopSelectionType.BUILDING_ONLY, null, 'red'),
-            new ShopSelection(ShopSelectionType.TILE_ONLY, 'grass', null),
-            new ShopSelection(ShopSelectionType.TILE_AND_BUILDING, 'concrete', 'red_awning'),
-            new ShopSelection(ShopSelectionType.TILE_AND_BUILDING, 'concrete', 'green_awning'),
-            new ShopSelection(ShopSelectionType.TILE_AND_BUILDING, 'concrete', 'no_awning')
-        ];
+        this.shopItems = [];
+        for (let buildingName in this.cache.json.get('buildings')) {
+            let building = this.cache.json.get('buildings')[buildingName];
+            this.shopItems.push(new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']))
+        }
+        for (let tileName in this.cache.json.get('tiles')) {
+            this.shopItems.push(new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null))
+        }
         for (let i = 0; i < this.shopItems.length; i++) {
             let selectionBox = this.add.rectangle(this.game.renderer.width - 75, this.getSelectionY(i), 100, 100, 0x000000);
             this.add.image(this.game.renderer.width - 75, this.getSelectionY(i), this.shopItems[i].getName()).setScale(scale);
@@ -84,8 +77,12 @@ export class UIScene extends Phaser.Scene {
         scene.currentCashText.setText('$' + cash);
     }
 
+    cashGrowthListener(cashGrowth, scene) {
+        scene.cashGrowthRateText.setText('$' + cashGrowth);
+    }
+
     addCashPerSecond(seconds) {
-        state.setCurrentCash(state.getCurrentCash() + (seconds * state.getCashGrowthRate()));
+        state.addCurrentCash(seconds * state.getCashGrowthRate());
     }
 
     // Add cash every second
