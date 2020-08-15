@@ -1,3 +1,5 @@
+import * as state from '../state/CashState';
+
 // Load json and assets
 export class LoadingScene extends Phaser.Scene {
     constructor() {
@@ -14,6 +16,11 @@ export class LoadingScene extends Phaser.Scene {
     }
 
     create() {
+        // Set initial cash values
+        state.setCurrentCash(this.cache.json.get('initials')['startingCash']);
+        state.setCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
+        state.setClickCashValue(this.cache.json.get('initials')['startingClickValue']);
+
         // Load assets
         // Building sprites
         for (let buildingName in this.cache.json.get('buildings')) {

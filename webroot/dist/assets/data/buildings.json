@@ -5,7 +5,7 @@
         "sprite": "buildingTiles_004.png",
         "cost": 20,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 2,
+        "baseCashGrowthRate": 3,
         "baseClickValue": 0
     },
     "Restaurant": {
@@ -14,7 +14,7 @@
         "sprite": "buildingTiles_018.png",
         "cost": 25,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 2,
+        "baseCashGrowthRate": 3,
         "baseClickValue": 0.2
     },
     "Bank": {

@@ -1,5 +1,6 @@
 import * as state from '../state/CashState';
 import { ShopSelection, ShopSelectionType, setShopSelection } from '../state/UIState';
+import { formatCash } from '../util/Util';
 
 const topShopSelectionY = 100;
 const shopSelectionMargin = 120;
@@ -18,13 +19,14 @@ export class UIScene extends Phaser.Scene {
 
         //TODO handle really large cash values
         // Cash UI
-        this.add.rectangle(this.game.renderer.width / 2, 25, 200, 50, 0x404040);
-        this.add.rectangle(this.game.renderer.width / 2, 65, 150, 30, 0x000000);
-        //TODO comma formatting for cash
-        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25, '$' + state.getCurrentCash(), titleTextStyle);
+        this.add.rectangle(this.game.renderer.width / 2, 25, 350, 50, 0x404040);
+        this.add.rectangle(this.game.renderer.width / 2, 65, 200, 30, 0x000000);
+        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25, '$', titleTextStyle);
+        this.currentCashText.setText(formatCash(state.getCurrentCash()));
         this.currentCashText.setOrigin(0.5);
         //TODO positive/negative sign
-        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '+$' + state.getCashGrowthRate(), subtitleTextStyle);
+        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '$', subtitleTextStyle);
+        this.cashGrowthRateText.setText(formatCash(state.getCashGrowthRate()));
         this.cashGrowthRateText.setOrigin(0.5);
 
         // Cash listeners
@@ -74,11 +76,11 @@ export class UIScene extends Phaser.Scene {
     }
 
     cashChangeListener(cash, scene) {
-        scene.currentCashText.setText('$' + cash);
+        scene.currentCashText.setText(formatCash(cash));
     }
 
     cashGrowthListener(cashGrowth, scene) {
-        scene.cashGrowthRateText.setText('$' + cashGrowth);
+        scene.cashGrowthRateText.setText(formatCash(cashGrowth));
     }
 
     addCashPerSecond(seconds) {

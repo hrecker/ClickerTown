@@ -1,15 +1,19 @@
-import { getRandomProperty } from '../util/Util';
-import { Tile } from '../model/Tile';
+import { getRandomInt } from '../util/Util';
 
 let map;
 
 export function initializeMap(tilesJson, width, height) {
+    let startingTileNames = Object.keys(tilesJson).
+        filter(tile => tilesJson[tile]['startingTile']);
     map = new Array(width);
     for (let x = 0; x < width; x++) {
         map[x] = new Array(height);
         for (let y = 0; y < height; y++) {
-            let tile = getRandomProperty(tilesJson);
-            map[x][y] = new Tile(tile['name']);
+            let tileName = startingTileNames[getRandomInt(0, startingTileNames.length)];
+            map[x][y] = { 
+                "tile": tileName,
+                "building": null
+            };
         }
     }
     return map;

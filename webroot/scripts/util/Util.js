@@ -10,3 +10,12 @@ export function getRandomProperty(obj) {
     let keys = Object.keys(obj);
     return obj[keys[ keys.length * Math.random() << 0]];
 };
+
+// https://stackoverflow.com/questions/149055/how-to-format-numbers-as-currency-string
+export function formatCash(cashValue) {
+    var formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+    });
+    return formatter.format(cashValue);
+}

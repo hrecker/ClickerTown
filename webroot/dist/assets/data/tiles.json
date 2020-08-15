@@ -4,27 +4,31 @@
         "sprite": "cityTiles_072.png",
         "cost": 2,
         "baseCashGrowthRate": -1,
-        "baseClickValue": 0
+        "baseClickValue": 0,
+        "startingTile": false
     },
     "Grass": {
         "name": "Grass",
         "sprite": "landscapeTiles_067.png",
         "cost": 1,
         "baseCashGrowthRate": 0.1,
-        "baseClickValue": 0
+        "baseClickValue": 0,
+        "startingTile": false
     },
     "Dirt": {
         "name": "Dirt",
         "sprite": "landscapeTiles_083.png",
         "cost": 0.5,
         "baseCashGrowthRate": 0,
-        "baseClickValue": 0
+        "baseClickValue": 0,
+        "startingTile": true
     },
     "Sand": {
         "name": "Sand",
         "sprite": "landscapeTiles_059.png",
         "cost": 0.5,
         "baseCashGrowthRate": 0,
-        "baseClickValue": 0
+        "baseClickValue": 0,
+        "startingTile": true
     }
 }
