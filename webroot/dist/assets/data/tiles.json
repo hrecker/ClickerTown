@@ -1,6 +1,7 @@
 {
     "Concrete": {
         "name": "Concrete",
+        "description": "+0.1 click value for each adjacent concrete tile",
         "sprite": "cityTiles_072.png",
         "cost": 2,
         "baseCashGrowthRate": -1,
@@ -9,6 +10,7 @@
     },
     "Grass": {
         "name": "Grass",
+        "description": "+0.1 growth rate for each adjacent grass tile",
         "sprite": "landscapeTiles_067.png",
         "cost": 1,
         "baseCashGrowthRate": 0.1,
@@ -17,6 +19,7 @@
     },
     "Dirt": {
         "name": "Dirt",
+        "description": "It's dirt. Nothing special about it.",
         "sprite": "landscapeTiles_083.png",
         "cost": 0.5,
         "baseCashGrowthRate": 0,
@@ -25,6 +28,7 @@
     },
     "Sand": {
         "name": "Sand",
+        "description": "+0.5 growth rate on when located the edge of the map",
         "sprite": "landscapeTiles_059.png",
         "cost": 0.5,
         "baseCashGrowthRate": 0,

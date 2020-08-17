@@ -1,54 +1,65 @@
-let currentCash = 0;
-let cashGrowthRate = 1;
-let clickCashValue = 1;
+let currentCashCents;
+let cashGrowthRateCents;
+let clickCashValueCents;
 let currentCashCallbacks = [];
 let cashGrowthCallbacks = [];
 let clickCashCallbacks = [];
 
+function dollarsToCents(dollars) {
+    return Math.round(dollars * 100);
+}
+
+function centsToDollars(cents) {
+    return cents / 100.0;
+}
+
 export function getCashGrowthRate() {
-    return cashGrowthRate;
+    return centsToDollars(cashGrowthRateCents);
 }
 
 export function setCashGrowthRate(growthRate) {
-    if (growthRate == cashGrowthRate) {
+    let centsGrowthRate = dollarsToCents(growthRate);
+    if (centsGrowthRate == cashGrowthRateCents) {
         return;
     }
 
-    cashGrowthRate = growthRate;
+    cashGrowthRateCents = centsGrowthRate;
     cashGrowthCallbacks.forEach(callback => 
-        callback.callback(cashGrowthRate, callback.scene));
+        callback.callback(getCashGrowthRate(), callback.scene));
 }
 
 export function getClickCashValue() {
-    return clickCashValue;
+    return centsToDollars(clickCashValueCents);
 }
 
 export function setClickCashValue(cashValue) {
-    if (cashValue == clickCashValue) {
+    let cashValueCents = dollarsToCents(cashValue);
+    if (cashValueCents == clickCashValueCents) {
         return;
     }
 
-    clickCashValue = cashValue;
+    clickCashValueCents = cashValueCents;
     clickCashCallbacks.forEach(callback => 
-        callback.callback(clickCashValue, callback.scene));
+        callback.callback(getClickCashValue(), callback.scene));
 }
 
 export function getCurrentCash() {
-    return currentCash;
+    return centsToDollars(currentCashCents);
 }
 
 export function addCurrentCash(cash) {
-    setCurrentCash(cash + currentCash);
+    setCurrentCash(cash + getCurrentCash());
 }
 
 export function setCurrentCash(cash) {
-    if (cash == currentCash) {
+    let cashCents = dollarsToCents(cash);
+    if (cashCents == currentCashCents) {
         return;
     }
 
-    currentCash = cash;
+    currentCashCents = cashCents;
     currentCashCallbacks.forEach(callback => 
-        callback.callback(currentCash, callback.scene));
+        callback.callback(getCurrentCash(), callback.scene));
 }
 
 export function addCurrentCashListener(callback, scene) {

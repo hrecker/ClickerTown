@@ -1,6 +1,7 @@
 Buildings
 - name: name of the building
 - tileName: name of the tile that gets placed along with the building, if there is one
+- description: description displayed in shop tooltip
 - sprite: image file name for the building, in assets/sprites/buildings/
 - cost: cost of placing the building in dollars
 - shopSelectionType: what gets placed when you purchase the building
@@ -12,6 +13,7 @@ Buildings
 
 Tiles
 - name: name of the tile
+- description: description displayed in shop tooltip
 - sprite: image file name for the tile, in assets/sprites/tiles/
 - cost: cost of placing the tile in dollars
 - baseCashGrowthRate: how much this tile increases/decreases your cash growth rate

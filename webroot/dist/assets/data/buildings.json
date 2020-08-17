@@ -2,6 +2,7 @@
     "Convenience Store": {
         "name": "Convenience Store",
         "tileName": "Concrete",
+        "description": "-1 growth rate for each adjacent convenience store",
         "sprite": "buildingTiles_004.png",
         "cost": 20,
         "shopSelectionType": "TILE_AND_BUILDING",
@@ -11,6 +12,7 @@
     "Restaurant": {
         "name": "Restaurant",
         "tileName": "Concrete",
+        "description": "+1 growth rate for each adjacent grass tile",
         "sprite": "buildingTiles_018.png",
         "cost": 25,
         "shopSelectionType": "TILE_AND_BUILDING",
@@ -20,6 +22,7 @@
     "Bank": {
         "name": "Bank",
         "tileName": "Concrete",
+        "description": "-10 growth rate for each adjacent bank, +2 for each other adjacent building",
         "sprite": "buildingTiles_009.png",
         "cost": 100,
         "shopSelectionType": "TILE_AND_BUILDING",

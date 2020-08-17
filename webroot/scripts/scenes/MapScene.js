@@ -159,7 +159,7 @@ export class MapScene extends Phaser.Scene {
 
     addClickCash(event) {
         // Add cash text animation
-        let clickTextStyle = { font: "48px Arial", fill: "#15b800" };
+        let clickTextStyle = { font: "48px Verdana", fill: "#15b800" };
         let cashClickText = this.game.scene.getScene('UIScene').add.text(
             event.upX, event.upY, formatCash(state.getClickCashValue()), clickTextStyle);
         this.add.tween({
