@@ -123,6 +123,10 @@ export class UIScene extends Phaser.Scene {
         text += formatCash(shopSelection['baseCashGrowthRate']);
         text += "\nCash per click: ";
         text += formatCash(shopSelection['baseClickValue']);
+        if (this.shopItems[index].selectionType == ShopSelectionType.TILE_AND_BUILDING) {
+            text += "\nTile: ";
+            text += shopSelection['tileName'];
+        }
         text += "\n\n";
         text += shopSelection['description'];
         return text;

@@ -22,3 +22,17 @@ export function initializeMap(tilesJson, width, height) {
 export function getMap() {
     return map;
 }
+
+export function areCoordinatesValid(x, y) {
+    return x >= 0 && x < map.length && y >=0 && y < map[0].length;
+}
+
+export function getAdjacentCoordinates(x, y) {
+    let result = [
+        new Phaser.Math.Vector2(x - 1, y),
+        new Phaser.Math.Vector2(x + 1, y),
+        new Phaser.Math.Vector2(x, y - 1),
+        new Phaser.Math.Vector2(x, y + 1)
+    ];
+    return result.filter(coords => areCoordinatesValid(coords.x, coords.y));
+}

@@ -33,6 +33,7 @@ export class MapScene extends Phaser.Scene {
 
         // Blocks
         this.createTileMap();
+        this.updateCashRates();
 
         // Hover image
         this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale).setOrigin(0.5, 1);
@@ -145,8 +146,8 @@ export class MapScene extends Phaser.Scene {
         let tileMap = map.getMap();
         let cashGrowthRate = this.cache.json.get('initials')['startingGrowthRate'];
         let clickValue = this.cache.json.get('initials')['startingClickValue'];
-        for (let x = 0; x < tileMap.length; x++) {
-            for (let y = 0; y < tileMap[0].length; y++) {
+        for (let x = 0; x < this.mapWidth; x++) {
+            for (let y = 0; y < this.mapHeight; y++) {
                 cashGrowthRate += build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), tileMap, x, y);
                 cashGrowthRate += tile.getTileCashGrowthRate(this.cache.json.get('tiles'), tileMap, x, y);
                 clickValue += build.getBuildingClickValue(this.cache.json.get('buildings'), tileMap, x, y);
