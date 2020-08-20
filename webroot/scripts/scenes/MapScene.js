@@ -10,6 +10,11 @@ const blockImageHeight = 100 * tileScale;
 const blockImageWidth = 132 * tileScale;
 const buildingYDiff = 0.325 * -blockImageWidth;
 const hoverImageAlpha = 0.65;
+const previewWidth = 120;
+const previewHeight = 50;
+const previewTextMargin = 5;
+const positiveCashColor = "#15b800";
+const negativeCashColor = "#f54242";
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -21,6 +26,9 @@ export class MapScene extends Phaser.Scene {
     create() {
         this.mapWidth = this.cache.json.get('initials')['mapWidth'];
         this.mapHeight = this.cache.json.get('initials')['mapHeight'];;
+
+        this.startingCashGrowthRate = this.cache.json.get('initials')['startingGrowthRate'];
+        this.startingClickValue = this.cache.json.get('initials')['startingClickValue'];
 
         this.mapOriginX = this.game.renderer.width / 2 - 75;
         this.mapOriginY = (this.game.renderer.height / 2) + (this.mapHeight * blockImageHeight / 3);
@@ -60,6 +68,18 @@ export class MapScene extends Phaser.Scene {
             maxSpeed: 1.0
         };
         this.controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
+
+        // Cash rate preview for new buildings
+        let previewTextStyle = { font: "16px Courier", align: "center" }
+        this.previewRect = this.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0);
+        this.previewRect.setOrigin(0.5, 1);
+        this.previewRect.alpha = 0.6;
+        this.previewTextGrowthRate = this.add.text(0, 0, "", previewTextStyle);
+        this.previewTextGrowthRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 2);
+        this.previewTextClickRate = this.add.text(0, 0, "", previewTextStyle);
+        this.previewTextClickRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 2);
+        this.hidePreview();
+        
     }
 
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
@@ -119,12 +139,7 @@ export class MapScene extends Phaser.Scene {
             state.addCurrentCash(-1 * price);
 
             // Update the tileMap
-            if (this.hoverImageType != ShopSelectionType.TILE_ONLY) {
-                tileMap[x][y].building = getShopSelection().buildingName;
-            } 
-            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
-                tileMap[x][y].tile = getShopSelection().tileName;
-            }
+            this.addShopSelectionToMap(tileMap, x, y);
 
             // Update cash per second and click cash
             this.updateCashRates();
@@ -142,10 +157,25 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
+    addShopSelectionToMap(tileMap, x, y) {
+        if (this.hoverImageType != ShopSelectionType.TILE_ONLY) {
+            tileMap[x][y].building = getShopSelection().buildingName;
+        } 
+        if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
+            tileMap[x][y].tile = getShopSelection().tileName;
+        }
+    }
+
     updateCashRates() {
         let tileMap = map.getMap();
-        let cashGrowthRate = this.cache.json.get('initials')['startingGrowthRate'];
-        let clickValue = this.cache.json.get('initials')['startingClickValue'];
+        let rates = this.getCashRates(tileMap);
+        state.setCashGrowthRate(rates.cashGrowthRate);
+        state.setClickCashValue(rates.clickValue);
+    }
+
+    getCashRates(tileMap) {
+        let cashGrowthRate = this.startingCashGrowthRate;
+        let clickValue = this.startingClickValue;
         for (let x = 0; x < this.mapWidth; x++) {
             for (let y = 0; y < this.mapHeight; y++) {
                 cashGrowthRate += build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), tileMap, x, y);
@@ -154,13 +184,65 @@ export class MapScene extends Phaser.Scene {
                 clickValue += tile.getTileClickValue(this.cache.json.get('tiles'), tileMap, x, y);
             }
         }
-        state.setCashGrowthRate(cashGrowthRate);
-        state.setClickCashValue(clickValue);
+        return {
+            cashGrowthRate: cashGrowthRate,
+            clickValue: clickValue
+        };
+    }
+
+    updatePreview(x, y) {
+        let coords = this.getTileWorldCoordinates(x, y);
+        this.previewRect.x = coords.x;
+        this.previewRect.y = coords.y - 150;
+        this.previewTextGrowthRate.x = this.previewRect.getTopLeft().x + previewTextMargin;
+        this.previewTextGrowthRate.y = this.previewRect.getTopLeft().y + previewTextMargin;
+        this.previewTextClickRate.x = this.previewRect.getTopLeft().x + previewTextMargin;
+        this.previewTextClickRate.y = this.previewRect.getTopLeft().y + previewTextMargin + previewHeight / 2;
+
+        let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
+        this.addShopSelectionToMap(mapCopy, x, y);
+        let rates = this.getCashRates(mapCopy);
+        let rateDiffs = {
+            cashGrowthRate: rates['cashGrowthRate'] - state.getCashGrowthRate(),
+            clickValue: rates['clickValue'] - state.getClickCashValue()
+        }
+
+        // Update preview rate text
+        let prefix = "";
+        if (rateDiffs.cashGrowthRate > 0.001) {
+            prefix += "+";
+            this.previewTextGrowthRate.setColor(positiveCashColor);
+        } else if (rateDiffs.cashGrowthRate < -0.001) {
+            this.previewTextGrowthRate.setColor(negativeCashColor);
+        } else {
+            this.previewTextGrowthRate.setColor("#000000");
+        }
+        this.previewTextGrowthRate.setText(prefix + formatCash(rateDiffs.cashGrowthRate) + "/s");
+        prefix = "";
+        if (rateDiffs.clickValue > 0.001) {
+            prefix += "+";
+            this.previewTextClickRate.setColor(positiveCashColor);
+        } else if (rateDiffs.clickValue < -0.001) {
+            this.previewTextClickRate.setColor(negativeCashColor);
+        } else {
+            this.previewTextClickRate.setColor("#000000");
+        }
+        this.previewTextClickRate.setText(prefix + formatCash(rateDiffs.clickValue) + "/c");
+
+        this.previewRect.setVisible(true);
+        this.previewTextGrowthRate.setVisible(true);
+        this.previewTextClickRate.setVisible(true);
+    }
+
+    hidePreview() {
+        this.previewRect.setVisible(false);
+        this.previewTextGrowthRate.setVisible(false);
+        this.previewTextClickRate.setVisible(false);
     }
 
     addClickCash(event) {
         // Add cash text animation
-        let clickTextStyle = { font: "48px Verdana", fill: "#15b800" };
+        let clickTextStyle = { font: "48px Verdana", fill: positiveCashColor };
         let cashClickText = this.game.scene.getScene('UIScene').add.text(
             event.upX, event.upY, formatCash(state.getClickCashValue()), clickTextStyle);
         this.add.tween({
@@ -200,7 +282,7 @@ export class MapScene extends Phaser.Scene {
             }
         }
 
-        // Update hover image or tile image and alpha
+        // Update hover image/tile image, cash preview, and alpha
         if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].building == null && 
                 (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].tile != getShopSelection().getName())) {
             this.tileHighlightActiveX = tileX;
@@ -214,10 +296,12 @@ export class MapScene extends Phaser.Scene {
             } else {
                 this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 0;
             }
+            this.updatePreview(tileX, tileY);
         } else {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
             this.hoverImage.alpha = 0;
+            this.hidePreview();
         }
     }
 
