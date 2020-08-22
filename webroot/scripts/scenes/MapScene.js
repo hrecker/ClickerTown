@@ -29,6 +29,7 @@ export class MapScene extends Phaser.Scene {
 
         this.startingCashGrowthRate = this.cache.json.get('initials')['startingGrowthRate'];
         this.startingClickValue = this.cache.json.get('initials')['startingClickValue'];
+        this.demolitionCostFraction = this.cache.json.get('initials')['demolishFraction'];
 
         this.mapOriginX = this.game.renderer.width / 2 - 75;
         this.mapOriginY = (this.game.renderer.height / 2) + (this.mapHeight * blockImageHeight / 3);
@@ -126,12 +127,16 @@ export class MapScene extends Phaser.Scene {
         let y = this.tileHighlightActiveY;
         let tileMap = map.getMap();
         // Can only modify/place tiles or buildings on tiles that don't have a building already
-        // and do not match the tile being placed
-        if (tileMap[x][y].building == null && 
-                (this.hoverImageType != ShopSelectionType.TILE_ONLY || tileMap[x][y].tile != getShopSelection().getName())) {
+        // and do not match the tile being placed.
+        // Can only demolish tiles with a placed building.
+        if ((tileMap[x][y].building && this.hoverImageType == ShopSelectionType.DEMOLITION) ||
+            (tileMap[x][y].building == null && 
+                (this.hoverImageType != ShopSelectionType.TILE_ONLY || tileMap[x][y].tile != getShopSelection().getName()))) {
             // Get and apply cost of placing
             let price = 0;
-            if (this.hoverImageType == ShopSelectionType.TILE_ONLY) {
+            if (this.hoverImageType == ShopSelectionType.DEMOLITION) {
+                price = this.cache.json.get('buildings')[tileMap[x][y].building]['cost'] * this.demolitionCostFraction;
+            } else if (this.hoverImageType == ShopSelectionType.TILE_ONLY) {
                 price = this.cache.json.get('tiles')[getShopSelection().tileName]['cost'];
             } else {
                 price = this.cache.json.get('buildings')[getShopSelection().buildingName]['cost'];
@@ -145,9 +150,13 @@ export class MapScene extends Phaser.Scene {
             this.updateCashRates();
 
             // Update displayed sprites
-            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].setTexture(getShopSelection().getName());
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
+            if (this.hoverImageType == ShopSelectionType.DEMOLITION) {
+                this.buildingImages[x][y].setVisible(false);
+                this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
+                this.tileMapImages[x][y].alpha = 1;
+            } else if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
+                this.tileMapImages[x][y].setTexture(getShopSelection().getName());
+                this.tileMapImages[x][y].alpha = 1;
             } else {
                 this.buildingImages[x][y].setVisible(true);
                 this.buildingImages[x][y].setTexture(getShopSelection().getName());
@@ -158,11 +167,15 @@ export class MapScene extends Phaser.Scene {
     }
 
     addShopSelectionToMap(tileMap, x, y) {
-        if (this.hoverImageType != ShopSelectionType.TILE_ONLY) {
-            tileMap[x][y].building = getShopSelection().buildingName;
-        } 
-        if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
-            tileMap[x][y].tile = getShopSelection().tileName;
+        if (this.hoverImageType == ShopSelectionType.DEMOLITION) {
+            tileMap[x][y].building = null;
+        } else {
+            if (this.hoverImageType != ShopSelectionType.TILE_ONLY) {
+                tileMap[x][y].building = getShopSelection().buildingName;
+            } 
+            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
+                tileMap[x][y].tile = getShopSelection().tileName;
+            }
         }
     }
 
@@ -275,29 +288,40 @@ export class MapScene extends Phaser.Scene {
             return;
         }
 
-        // Reset tile image and alpha
+        // Reset tile alpha
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
-            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
-            }
+            this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
         }
 
         // Update hover image/tile image, cash preview, and alpha
-        if (this.areTileCoordinatesValid(tileX, tileY) && map.getMap()[tileX][tileY].building == null && 
-                (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].tile != getShopSelection().getName())) {
+        let tileHighlighted = false;
+        if (this.areTileCoordinatesValid(tileX, tileY)) {
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
             let tileCoords = this.getTileWorldCoordinates(tileX, tileY);
             this.hoverImage.x = tileCoords.x;
             this.hoverImage.y = tileCoords.y;
             this.hoverImage.alpha = hoverImageAlpha;
-            if (this.hoverImageType == ShopSelectionType.BUILDING_ONLY) {
+            // Demolishing existing building
+            if (this.hoverImageType == ShopSelectionType.DEMOLITION && map.getMap()[tileX][tileY].building != null) {
+                tileHighlighted = true;
+                this.hoverImage.setScale(tileScale / 2);
                 this.hoverImage.y += buildingYDiff;
-            } else {
-                this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 0;
+                this.updatePreview(tileX, tileY);
+            // Placing new tile, building, or both    
+            } else if (map.getMap()[tileX][tileY].building == null && this.hoverImageType != ShopSelectionType.DEMOLITION &&
+                    (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].tile != getShopSelection().getName())) {
+                tileHighlighted = true;
+                this.hoverImage.setScale(tileScale);
+                if (this.hoverImageType == ShopSelectionType.BUILDING_ONLY) {
+                    this.hoverImage.y += buildingYDiff;
+                } else {
+                    this.tileMapImages[tileX][tileY].alpha = 0;
+                }
+                this.updatePreview(tileX, tileY);
             }
-            this.updatePreview(tileX, tileY);
-        } else {
+        } 
+        if (!tileHighlighted) {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
             this.hoverImage.alpha = 0;

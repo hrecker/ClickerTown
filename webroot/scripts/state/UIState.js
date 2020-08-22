@@ -1,7 +1,8 @@
 export const ShopSelectionType = Object.freeze({
-    TILE_ONLY: 0,
-    BUILDING_ONLY: 1,
-    TILE_AND_BUILDING: 2
+    DEMOLITION: 0,
+    TILE_ONLY: 1,
+    BUILDING_ONLY: 2,
+    TILE_AND_BUILDING: 3
 });
 
 // Item selected in the UI to build
@@ -34,6 +35,8 @@ export class ShopSelection {
 
     getName() {
         switch (this.selectionType) {
+            case ShopSelectionType.DEMOLITION:
+                return 'bomb';
             case ShopSelectionType.TILE_ONLY:
                 return this.tileName;
             case ShopSelectionType.BUILDING_ONLY:

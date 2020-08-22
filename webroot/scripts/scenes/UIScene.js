@@ -50,16 +50,21 @@ export class UIScene extends Phaser.Scene {
 
         // Shop selections
         this.shopItems = [];
+        // Demolish
+        this.shopItems.push(new ShopSelection(ShopSelectionType.DEMOLITION, null, null));
+        // Buildings
         for (let buildingName in this.cache.json.get('buildings')) {
             let building = this.cache.json.get('buildings')[buildingName];
             this.shopItems.push(new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']))
         }
+        // Tiles
         for (let tileName in this.cache.json.get('tiles')) {
             this.shopItems.push(new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null))
         }
+
         for (let i = 0; i < this.shopItems.length; i++) {
             let position = this.getSelectionPosition(i);
-            let selectionBox = this.add.rectangle(position.x, position.y, selectionBoxSize, selectionBoxSize, 0x000000);
+            let selectionBox = this.add.rectangle(position.x, position.y, selectionBoxSize, selectionBoxSize, 0x999999);
             this.add.image(position.x, position.y, this.shopItems[i].getName()).setScale(imageScale);
             selectionBox.setInteractive();
             selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
@@ -110,25 +115,31 @@ export class UIScene extends Phaser.Scene {
 
     getTooltipText(index) {
         let shopSelection;
-        if (this.shopItems[index].selectionType == ShopSelectionType.TILE_ONLY) {
-            shopSelection = this.cache.json.get('tiles')[this.shopItems[index].getName()];
+        let text;
+        if (this.shopItems[index].selectionType == ShopSelectionType.DEMOLITION) {
+            text = "Demolish building";
+            text += "\n\nCost: Half of the construction cost for the selected building";
         } else {
-            shopSelection = this.cache.json.get('buildings')[this.shopItems[index].getName()];
-        }
+            if (this.shopItems[index].selectionType == ShopSelectionType.TILE_ONLY) {
+                shopSelection = this.cache.json.get('tiles')[this.shopItems[index].getName()];
+            } else {
+                shopSelection = this.cache.json.get('buildings')[this.shopItems[index].getName()];
+            }
 
-        let text = shopSelection['name'];
-        text += "\nCost: ";
-        text += formatCash(shopSelection['cost']);
-        text += "\nCash per second: ";
-        text += formatCash(shopSelection['baseCashGrowthRate']);
-        text += "\nCash per click: ";
-        text += formatCash(shopSelection['baseClickValue']);
-        if (this.shopItems[index].selectionType == ShopSelectionType.TILE_AND_BUILDING) {
-            text += "\nTile: ";
-            text += shopSelection['tileName'];
+            text = shopSelection['name'];
+            text += "\nCost: ";
+            text += formatCash(shopSelection['cost']);
+            text += "\nCash per second: ";
+            text += formatCash(shopSelection['baseCashGrowthRate']);
+            text += "\nCash per click: ";
+            text += formatCash(shopSelection['baseClickValue']);
+            if (this.shopItems[index].selectionType == ShopSelectionType.TILE_AND_BUILDING) {
+                text += "\nTile: ";
+                text += shopSelection['tileName'];
+            }
+            text += "\n\n";
+            text += shopSelection['description'];
         }
-        text += "\n\n";
-        text += shopSelection['description'];
         return text;
     }
 

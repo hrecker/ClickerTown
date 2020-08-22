@@ -13,6 +13,9 @@ export class LoadingScene extends Phaser.Scene {
         this.load.json('buildings', 'assets/data/buildings.json');
         this.load.json('initials', 'assets/data/initials.json');
         this.load.json('tiles', 'assets/data/tiles.json');
+
+        // Load other sprites
+        this.load.image('bomb', 'assets/sprites/ui/bomb.png');
     }
 
     create() {
