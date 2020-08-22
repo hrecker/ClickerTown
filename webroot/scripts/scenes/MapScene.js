@@ -11,7 +11,7 @@ const blockImageWidth = 132 * tileScale;
 const buildingYDiff = 0.325 * -blockImageWidth;
 const hoverImageAlpha = 0.65;
 const previewWidth = 120;
-const previewHeight = 50;
+const previewHeight = 75;
 const previewTextMargin = 5;
 const positiveCashColor = "#15b800";
 const negativeCashColor = "#f54242";
@@ -75,10 +75,12 @@ export class MapScene extends Phaser.Scene {
         this.previewRect = this.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0);
         this.previewRect.setOrigin(0.5, 1);
         this.previewRect.alpha = 0.6;
+        this.previewTextCost = this.add.text(0, 0, "", previewTextStyle);
+        this.previewTextCost.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
         this.previewTextGrowthRate = this.add.text(0, 0, "", previewTextStyle);
-        this.previewTextGrowthRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 2);
+        this.previewTextGrowthRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
         this.previewTextClickRate = this.add.text(0, 0, "", previewTextStyle);
-        this.previewTextClickRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 2);
+        this.previewTextClickRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
         this.hidePreview();
         
     }
@@ -132,16 +134,8 @@ export class MapScene extends Phaser.Scene {
         if ((tileMap[x][y].building && this.hoverImageType == ShopSelectionType.DEMOLITION) ||
             (tileMap[x][y].building == null && 
                 (this.hoverImageType != ShopSelectionType.TILE_ONLY || tileMap[x][y].tile != getShopSelection().getName()))) {
-            // Get and apply cost of placing
-            let price = 0;
-            if (this.hoverImageType == ShopSelectionType.DEMOLITION) {
-                price = this.cache.json.get('buildings')[tileMap[x][y].building]['cost'] * this.demolitionCostFraction;
-            } else if (this.hoverImageType == ShopSelectionType.TILE_ONLY) {
-                price = this.cache.json.get('tiles')[getShopSelection().tileName]['cost'];
-            } else {
-                price = this.cache.json.get('buildings')[getShopSelection().buildingName]['cost'];
-            }
-            state.addCurrentCash(-1 * price);
+            // Apply cost of placing
+            state.addCurrentCash(-1 * this.getShopSelectionPrice());
 
             // Update the tileMap
             this.addShopSelectionToMap(tileMap, x, y);
@@ -163,6 +157,16 @@ export class MapScene extends Phaser.Scene {
             }
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
+        }
+    }
+
+    getShopSelectionPrice() {
+        if (this.hoverImageType == ShopSelectionType.DEMOLITION) {
+            return this.cache.json.get('buildings')[map.getMap()[this.tileHighlightActiveX][this.tileHighlightActiveY].building]['cost'] * this.demolitionCostFraction;
+        } else if (this.hoverImageType == ShopSelectionType.TILE_ONLY) {
+            return this.cache.json.get('tiles')[getShopSelection().tileName]['cost'];
+        } else {
+            return this.cache.json.get('buildings')[getShopSelection().buildingName]['cost'];
         }
     }
 
@@ -207,10 +211,12 @@ export class MapScene extends Phaser.Scene {
         let coords = this.getTileWorldCoordinates(x, y);
         this.previewRect.x = coords.x;
         this.previewRect.y = coords.y - 150;
+        this.previewTextCost.x = this.previewRect.getTopLeft().x + previewTextMargin;
+        this.previewTextCost.y = this.previewRect.getTopLeft().y + previewTextMargin;
         this.previewTextGrowthRate.x = this.previewRect.getTopLeft().x + previewTextMargin;
-        this.previewTextGrowthRate.y = this.previewRect.getTopLeft().y + previewTextMargin;
+        this.previewTextGrowthRate.y = this.previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3;
         this.previewTextClickRate.x = this.previewRect.getTopLeft().x + previewTextMargin;
-        this.previewTextClickRate.y = this.previewRect.getTopLeft().y + previewTextMargin + previewHeight / 2;
+        this.previewTextClickRate.y = this.previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3;
 
         let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
         this.addShopSelectionToMap(mapCopy, x, y);
@@ -221,34 +227,32 @@ export class MapScene extends Phaser.Scene {
         }
 
         // Update preview rate text
-        let prefix = "";
-        if (rateDiffs.cashGrowthRate > 0.001) {
-            prefix += "+";
-            this.previewTextGrowthRate.setColor(positiveCashColor);
-        } else if (rateDiffs.cashGrowthRate < -0.001) {
-            this.previewTextGrowthRate.setColor(negativeCashColor);
-        } else {
-            this.previewTextGrowthRate.setColor("#000000");
-        }
-        this.previewTextGrowthRate.setText(prefix + formatCash(rateDiffs.cashGrowthRate) + "/s");
-        prefix = "";
-        if (rateDiffs.clickValue > 0.001) {
-            prefix += "+";
-            this.previewTextClickRate.setColor(positiveCashColor);
-        } else if (rateDiffs.clickValue < -0.001) {
-            this.previewTextClickRate.setColor(negativeCashColor);
-        } else {
-            this.previewTextClickRate.setColor("#000000");
-        }
-        this.previewTextClickRate.setText(prefix + formatCash(rateDiffs.clickValue) + "/c");
+        this.updatePreviewText(this.previewTextCost, -1 * this.getShopSelectionPrice(), "");
+        this.updatePreviewText(this.previewTextGrowthRate, rateDiffs.cashGrowthRate, "/s");
+        this.updatePreviewText(this.previewTextClickRate, rateDiffs.clickValue, "/s");
 
         this.previewRect.setVisible(true);
+        this.previewTextCost.setVisible(true);
         this.previewTextGrowthRate.setVisible(true);
         this.previewTextClickRate.setVisible(true);
     }
 
+    updatePreviewText(text, cashValue, suffix) {
+        let prefix = "";
+        if (cashValue > 0.001) {
+            prefix += "+";
+            text.setColor(positiveCashColor);
+        } else if (cashValue < -0.001) {
+            text.setColor(negativeCashColor);
+        } else {
+            text.setColor("#000000");
+        }
+        text.setText(prefix + formatCash(cashValue) + suffix);
+    }
+
     hidePreview() {
         this.previewRect.setVisible(false);
+        this.previewTextCost.setVisible(false);
         this.previewTextGrowthRate.setVisible(false);
         this.previewTextClickRate.setVisible(false);
     }
