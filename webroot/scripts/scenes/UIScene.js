@@ -45,7 +45,9 @@ export class UIScene extends Phaser.Scene {
         this.lastCashGrowth = -1;
 
         // Shop selection UI
-        this.add.rectangle(this.game.renderer.width - 75, this.game.renderer.height / 2, 150, this.game.renderer.height, 0x404040);
+        let shopSelectionBox = this.add.rectangle(this.game.renderer.width - 75, this.game.renderer.height / 2, 150, this.game.renderer.height, 0x404040);
+        shopSelectionBox.setInteractive();
+        shopSelectionBox.on("pointerdown", () => { this.clearShopSelection(); });
         this.add.text(this.game.renderer.width - 115, 9, "Shop", shopTextStyle);
 
         // Shop selections
@@ -77,8 +79,7 @@ export class UIScene extends Phaser.Scene {
         this.shopHighlight = this.add.rectangle(selectedPosition.x, selectedPosition.y, selectionBoxSize, selectionBoxSize);
         this.shopHighlight.isFilled = false;
         this.shopHighlight.setStrokeStyle(5, 0xFFFFFF);
-
-        this.selectShopItem(0);
+        this.clearShopSelection();
 
         // Tooltip
         this.tooltipRect = this.add.rectangle(selectedPosition.x, selectedPosition.y, tooltipWidth, tooltipHeight, 0xfffbf0);
@@ -99,7 +100,13 @@ export class UIScene extends Phaser.Scene {
         let newHighlightPosition = this.getSelectionPosition(index);
         this.shopHighlight.x = newHighlightPosition.x;
         this.shopHighlight.y = newHighlightPosition.y;
+        this.shopHighlight.setVisible(true);
         setShopSelection(this.shopItems[index]);
+    }
+
+    clearShopSelection() {
+        this.shopHighlight.setVisible(false);
+        setShopSelection(null);
     }
 
     setTooltip(index) {

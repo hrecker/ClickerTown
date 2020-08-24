@@ -110,7 +110,8 @@ export class MapScene extends Phaser.Scene {
     }
 
     handleClick(event) {
-        if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
+        if (getShopSelection() != null && 
+                this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
             // If highlighting a tile, build the shop selection
             this.placeShopSelection();
         } else {
@@ -120,8 +121,10 @@ export class MapScene extends Phaser.Scene {
     }
 
     shopSelectionListener(shopSelection, scene) {
-        scene.hoverImageType = shopSelection.selectionType;
-        scene.hoverImage.setTexture(shopSelection.getName());
+        if (shopSelection != null) {
+            scene.hoverImageType = shopSelection.selectionType;
+            scene.hoverImage.setTexture(shopSelection.getName());
+        }
     }
 
     placeShopSelection() {
@@ -280,6 +283,11 @@ export class MapScene extends Phaser.Scene {
     }
 
     updateTileHighlight(x, y) {
+        // No highlights when nothing is selected
+        if (getShopSelection() == null) {
+            return;
+        }
+
         let xDiff = x - this.mapOriginX;
         let yDiff = (this.mapOriginY - blockImageHeight / 2 + blockImageWidth / 4) - y;
         
