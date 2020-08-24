@@ -1,5 +1,5 @@
 import * as state from '../state/CashState';
-import { ShopSelection, ShopSelectionType, setShopSelection } from '../state/UIState';
+import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection } from '../state/UIState';
 import { formatCash } from '../util/Util';
 
 const imageScale = 0.4;
@@ -53,25 +53,25 @@ export class UIScene extends Phaser.Scene {
         // Shop selections
         this.shopItems = [];
         // Demolish
-        this.shopItems.push(new ShopSelection(ShopSelectionType.DEMOLITION, null, null));
+        this.shopItems.push({ selection: new ShopSelection(ShopSelectionType.DEMOLITION, null, null) });
         // Buildings
         for (let buildingName in this.cache.json.get('buildings')) {
             let building = this.cache.json.get('buildings')[buildingName];
-            this.shopItems.push(new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']))
+            this.shopItems.push({ selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) });
         }
         // Tiles
         for (let tileName in this.cache.json.get('tiles')) {
-            this.shopItems.push(new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null))
+            this.shopItems.push({ selection: new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null) });
         }
 
         for (let i = 0; i < this.shopItems.length; i++) {
             let position = this.getSelectionPosition(i);
-            let selectionBox = this.add.rectangle(position.x, position.y, selectionBoxSize, selectionBoxSize, 0x999999);
-            this.add.image(position.x, position.y, this.shopItems[i].getName()).setScale(imageScale);
-            selectionBox.setInteractive();
-            selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
-            selectionBox.on("pointerover", () => { this.setTooltip(i); });
-            selectionBox.on("pointerout", () => { this.hideTooltip(); });
+            this.shopItems[i].selectionBox = this.add.rectangle(position.x, position.y, selectionBoxSize, selectionBoxSize, 0x999999);
+            this.shopItems[i].sprite = this.add.image(position.x, position.y, this.shopItems[i].selection.getName()).setScale(imageScale);
+            this.shopItems[i].selectionBox.setInteractive();
+            this.shopItems[i].selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
+            this.shopItems[i].selectionBox.on("pointerover", () => { this.setTooltip(i); });
+            this.shopItems[i].selectionBox.on("pointerout", () => { this.hideTooltip(); });
         }
 
         // Shop selection highlight
@@ -80,6 +80,7 @@ export class UIScene extends Phaser.Scene {
         this.shopHighlight.isFilled = false;
         this.shopHighlight.setStrokeStyle(5, 0xFFFFFF);
         this.clearShopSelection();
+        this.updateValidShopSelections(state.getCurrentCash());
 
         // Tooltip
         this.tooltipRect = this.add.rectangle(selectedPosition.x, selectedPosition.y, tooltipWidth, tooltipHeight, 0xfffbf0);
@@ -101,12 +102,29 @@ export class UIScene extends Phaser.Scene {
         this.shopHighlight.x = newHighlightPosition.x;
         this.shopHighlight.y = newHighlightPosition.y;
         this.shopHighlight.setVisible(true);
-        setShopSelection(this.shopItems[index]);
+        setShopSelection(this.shopItems[index].selection);
     }
 
     clearShopSelection() {
         this.shopHighlight.setVisible(false);
         setShopSelection(null);
+    }
+
+    updateValidShopSelections(currentCash) {
+        for (let i = 0; i < this.shopItems.length; i++) {
+            // If the player should be able to select this option then make it active
+            if (this.shopItems[i].selection.selectionType == ShopSelectionType.DEMOLITION || this.shopItems[i].selection.getPrice(this.cache.json) <= currentCash) {
+                this.shopItems[i].sprite.alpha = 1;
+                this.shopItems[i].selectionBox.setInteractive();
+            // Otherwise prevent selecting this option
+            } else {
+                this.shopItems[i].sprite.alpha = 0.5;
+                this.shopItems[i].selectionBox.disableInteractive();
+                if (getShopSelection() == this.shopItems[i].selection) {
+                    this.clearShopSelection();
+                }
+            }
+        }
     }
 
     setTooltip(index) {
@@ -123,14 +141,14 @@ export class UIScene extends Phaser.Scene {
     getTooltipText(index) {
         let shopSelection;
         let text;
-        if (this.shopItems[index].selectionType == ShopSelectionType.DEMOLITION) {
+        if (this.shopItems[index].selection.selectionType == ShopSelectionType.DEMOLITION) {
             text = "Demolish building";
             text += "\n\nCost: Half of the construction cost for the selected building";
         } else {
-            if (this.shopItems[index].selectionType == ShopSelectionType.TILE_ONLY) {
-                shopSelection = this.cache.json.get('tiles')[this.shopItems[index].getName()];
+            if (this.shopItems[index].selection.selectionType == ShopSelectionType.TILE_ONLY) {
+                shopSelection = this.cache.json.get('tiles')[this.shopItems[index].selection.getName()];
             } else {
-                shopSelection = this.cache.json.get('buildings')[this.shopItems[index].getName()];
+                shopSelection = this.cache.json.get('buildings')[this.shopItems[index].selection.getName()];
             }
 
             text = shopSelection['name'];
@@ -140,7 +158,7 @@ export class UIScene extends Phaser.Scene {
             text += formatCash(shopSelection['baseCashGrowthRate']);
             text += "\nCash per click: ";
             text += formatCash(shopSelection['baseClickValue']);
-            if (this.shopItems[index].selectionType == ShopSelectionType.TILE_AND_BUILDING) {
+            if (this.shopItems[index].selection.selectionType == ShopSelectionType.TILE_AND_BUILDING) {
                 text += "\nTile: ";
                 text += shopSelection['tileName'];
             }
@@ -157,6 +175,7 @@ export class UIScene extends Phaser.Scene {
 
     cashChangeListener(cash, scene) {
         scene.currentCashText.setText(formatCash(cash));
+        scene.updateValidShopSelections(cash);
     }
 
     cashGrowthListener(cashGrowth, scene) {

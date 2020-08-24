@@ -45,4 +45,18 @@ export class ShopSelection {
                 return this.buildingName;
         }
     }
+
+    getPrice(jsonCache) {
+        switch (this.selectionType) {
+            case ShopSelectionType.TILE_ONLY:
+                return jsonCache.get('tiles')[this.tileName]['cost'];
+            case ShopSelectionType.BUILDING_ONLY:
+            case ShopSelectionType.TILE_AND_BUILDING:
+                return jsonCache.get('buildings')[this.buildingName]['cost'];
+            // Demolition price depends on what is demolished
+            case ShopSelectionType.DEMOLITION:
+            default:
+                return 0;
+        }
+    }
 }
