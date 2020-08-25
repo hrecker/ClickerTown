@@ -24,6 +24,7 @@ export class UIScene extends Phaser.Scene {
         let subtitleTextStyle = { font: "bold 24px Verdana", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
         let shopTextStyle = { font: "bold 30px Arial", boundsAlignH: "center", boundsAlignV: "middle" };
         let tooltipTextStyle = { font: "14px Courier", fill: "#000000", align: "left", wordWrap: { width: (tooltipWidth - 2 * tooltipTextMargin), useAdvancedWrap: true } }
+        let priceTextStyle = { font: "bold 10px Verdana", fill: "#000000", align: "center" };
 
         //TODO handle really large cash values
         // Cash UI
@@ -72,6 +73,11 @@ export class UIScene extends Phaser.Scene {
             this.shopItems[i].selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
             this.shopItems[i].selectionBox.on("pointerover", () => { this.setTooltip(i); });
             this.shopItems[i].selectionBox.on("pointerout", () => { this.hideTooltip(); });
+            if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
+                let priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 
+                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json)), priceTextStyle);
+                priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
+            }
         }
 
         // Shop selection highlight
