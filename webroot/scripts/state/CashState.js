@@ -1,9 +1,22 @@
+import * as build from '../model/Building';
+import * as tile from '../model/Tile';
+
+let startingCashGrowthRate;
+let startingClickValue;
 let currentCashCents;
 let cashGrowthRateCents;
 let clickCashValueCents;
 let currentCashCallbacks = [];
 let cashGrowthCallbacks = [];
 let clickCashCallbacks = [];
+
+export function setStartingCashGrowthRate(growthRate) {
+    startingCashGrowthRate = growthRate;
+}
+
+export function setStartingClickValue(clickValue) {
+    startingClickValue = clickValue;
+}
 
 function dollarsToCents(dollars) {
     return Math.round(dollars * 100);
@@ -81,4 +94,27 @@ export function addClickCashListener(callback, scene) {
         callback: callback,
         scene: scene
     });
+}
+
+export function getCashRates(jsonCache, tileMap) {
+    let cashGrowthRate = startingCashGrowthRate;
+    let clickValue = startingClickValue;
+    for (let x = 0; x < tileMap.length; x++) {
+        for (let y = 0; y < tileMap[x].length; y++) {
+            cashGrowthRate += build.getBuildingCashGrowthRate(jsonCache.get('buildings'), tileMap, x, y);
+            cashGrowthRate += tile.getTileCashGrowthRate(jsonCache.get('tiles'), tileMap, x, y);
+            clickValue += build.getBuildingClickValue(jsonCache.get('buildings'), tileMap, x, y);
+            clickValue += tile.getTileClickValue(jsonCache.get('tiles'), tileMap, x, y);
+        }
+    }
+    return {
+        cashGrowthRate: cashGrowthRate,
+        clickValue: clickValue
+    };
+}
+
+export function updateCashRates(jsonCache, tileMap) {
+    let rates = getCashRates(jsonCache, tileMap);
+    setCashGrowthRate(rates.cashGrowthRate);
+    setClickCashValue(rates.clickValue);
 }

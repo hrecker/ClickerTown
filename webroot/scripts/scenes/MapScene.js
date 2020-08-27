@@ -24,12 +24,8 @@ export class MapScene extends Phaser.Scene {
     }
 
     create() {
-        this.mapWidth = this.cache.json.get('initials')['mapWidth'];
-        this.mapHeight = this.cache.json.get('initials')['mapHeight'];;
-
-        this.startingCashGrowthRate = this.cache.json.get('initials')['startingGrowthRate'];
-        this.startingClickValue = this.cache.json.get('initials')['startingClickValue'];
-        this.demolitionCostFraction = this.cache.json.get('initials')['demolishFraction'];
+        this.mapWidth = map.getMap().length;
+        this.mapHeight = map.getMap()[0].length;
 
         this.mapOriginX = this.game.renderer.width / 2 - 75;
         this.mapOriginY = (this.game.renderer.height / 2) + (this.mapHeight * blockImageHeight / 3);
@@ -45,12 +41,11 @@ export class MapScene extends Phaser.Scene {
 
         // Blocks
         this.createTileMap();
-        this.updateCashRates();
+        state.updateCashRates(this.cache.json, map.getMap());
 
         // Hover image
         this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale).setOrigin(0.5, 1);
         this.hoverImage.alpha = 0;
-        this.hoverImageType = ShopSelectionType.BUILDING_ONLY;
 
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
@@ -73,7 +68,7 @@ export class MapScene extends Phaser.Scene {
         };
         this.controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
 
-        // Cash rate preview for new buildings
+        // Cash rate preview for new buildings, and info on existing buildings
         let previewTextStyle = { font: "24px Courier", align: "center", fill: "black" };
         this.previewRect = this.uiScene.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0);
         this.previewRect.setOrigin(0.5, 1);
@@ -91,7 +86,6 @@ export class MapScene extends Phaser.Scene {
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
     // X increases diagonally up and to the right. Y increases diagonally up and to the left.
     createTileMap() {
-        let tileMap = map.initializeMap(this.cache.json.get('tiles'), this.mapWidth, this.mapHeight);
         this.tileMapImages = new Array(this.mapWidth);
         this.buildingImages = new Array(this.mapWidth);
 
@@ -101,11 +95,11 @@ export class MapScene extends Phaser.Scene {
             for (let y = this.mapHeight - 1; y >= 0; y--) {
                 let tileCoords = this.getTileWorldCoordinates(x, y);
                 let tileImage = this.add.image(tileCoords.x, tileCoords.y, 
-                    tileMap[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
+                    map.getMap()[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
                 this.tileMapImages[x][y] = tileImage;
                 // Add a placeholder building image to be replaced when necessary
                 let buildingImage = this.add.image(tileCoords.x, tileCoords.y + buildingYDiff,
-                    tileMap[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
+                    map.getMap()[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
             }
@@ -116,7 +110,8 @@ export class MapScene extends Phaser.Scene {
         if (this.currentShopSelection != null && 
                 this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
             // If highlighting a tile, build the shop selection if enough cash
-            if (this.getShopSelectionPrice(this.currentShopSelection) <= state.getCurrentCash()) {
+            if (map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, 
+                    this.tileHighlightActiveX, this.tileHighlightActiveY) <= state.getCurrentCash()) {
                 this.placeShopSelection();
             } else {
                 // Print message for not enough cash. Should only happen for demolition,
@@ -134,7 +129,6 @@ export class MapScene extends Phaser.Scene {
     shopSelectionListener(shopSelection, scene) {
         scene.currentShopSelection = shopSelection;
         if (shopSelection != null) {
-            scene.hoverImageType = shopSelection.selectionType;
             scene.hoverImage.setTexture(shopSelection.getName());
         } else {
             scene.updateTileHighlight();
@@ -146,19 +140,13 @@ export class MapScene extends Phaser.Scene {
         let y = this.tileHighlightActiveY;
         let tileMap = map.getMap();
         const selection = this.currentShopSelection;
-        // Can only modify/place tiles or buildings on tiles that don't have a building already
-        // and do not match the tile being placed.
-        // Can only demolish tiles with a placed building.
-        if ((tileMap[x][y].building && selection.selectionType == ShopSelectionType.DEMOLITION) ||
-            (tileMap[x][y].building == null && 
-                (selection.selectionType != ShopSelectionType.TILE_ONLY || tileMap[x][y].tile != selection.getName()))) {
-            let price = this.getShopSelectionPrice(selection);
-                    
+        if (map.canPlaceShopSelection(selection, x, y)) {
+            let price = map.getShopSelectionPrice(this.cache.json, selection, x, y);
             // Update the tileMap
-            this.addShopSelectionToMap(selection, tileMap, x, y);
+            map.addShopSelectionToMap(selection, tileMap, x, y);
 
             // Update cash per second and click cash
-            this.updateCashRates();
+            state.updateCashRates(this.cache.json, map.getMap());
 
             // Update displayed sprites
             if (selection.selectionType == ShopSelectionType.DEMOLITION) {
@@ -178,51 +166,6 @@ export class MapScene extends Phaser.Scene {
             // Apply cost of placing
             state.addCurrentCash(-1 * price);
         }
-    }
-
-    getShopSelectionPrice(selection) {
-        if (selection.selectionType == ShopSelectionType.DEMOLITION) {
-            return this.cache.json.get('buildings')[map.getMap()[this.tileHighlightActiveX][this.tileHighlightActiveY].building]['cost'] * this.demolitionCostFraction;
-        } else {
-            return selection.getPrice(this.cache.json);
-        }
-    }
-
-    addShopSelectionToMap(selection, tileMap, x, y) {
-        if (this.hoverImageType == ShopSelectionType.DEMOLITION) {
-            tileMap[x][y].building = null;
-        } else {
-            if (this.hoverImageType != ShopSelectionType.TILE_ONLY) {
-                tileMap[x][y].building = selection.buildingName;
-            } 
-            if (this.hoverImageType != ShopSelectionType.BUILDING_ONLY) {
-                tileMap[x][y].tile = selection.tileName;
-            }
-        }
-    }
-
-    updateCashRates() {
-        let tileMap = map.getMap();
-        let rates = this.getCashRates(tileMap);
-        state.setCashGrowthRate(rates.cashGrowthRate);
-        state.setClickCashValue(rates.clickValue);
-    }
-
-    getCashRates(tileMap) {
-        let cashGrowthRate = this.startingCashGrowthRate;
-        let clickValue = this.startingClickValue;
-        for (let x = 0; x < this.mapWidth; x++) {
-            for (let y = 0; y < this.mapHeight; y++) {
-                cashGrowthRate += build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), tileMap, x, y);
-                cashGrowthRate += tile.getTileCashGrowthRate(this.cache.json.get('tiles'), tileMap, x, y);
-                clickValue += build.getBuildingClickValue(this.cache.json.get('buildings'), tileMap, x, y);
-                clickValue += tile.getTileClickValue(this.cache.json.get('tiles'), tileMap, x, y);
-            }
-        }
-        return {
-            cashGrowthRate: cashGrowthRate,
-            clickValue: clickValue
-        };
     }
 
     updatePreview(x, y, showExistingBuildingRates) {
@@ -260,15 +203,16 @@ export class MapScene extends Phaser.Scene {
         // Showing shop selection rates
         } else {
             let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
-            this.addShopSelectionToMap(this.currentShopSelection, mapCopy, x, y);
-            let rates = this.getCashRates(mapCopy);
+            map.addShopSelectionToMap(this.currentShopSelection, mapCopy, x, y);
+            let rates = state.getCashRates(this.cache.json, mapCopy);
             let rateDiffs = {
                 cashGrowthRate: rates['cashGrowthRate'] - state.getCashGrowthRate(),
                 clickValue: rates['clickValue'] - state.getClickCashValue()
             }
 
             // Update preview rate text
-            this.updatePreviewText(this.previewTextCost, -1 * this.getShopSelectionPrice(this.currentShopSelection), "");
+            this.updatePreviewText(this.previewTextCost, -1 * map.getShopSelectionPrice(this.cache.json,
+                this.currentShopSelection, this.tileHighlightActiveX, this.tileHighlightActiveY), "");
             this.updatePreviewText(this.previewTextGrowthRate, rateDiffs.cashGrowthRate, "/s");
             this.updatePreviewText(this.previewTextClickRate, rateDiffs.clickValue, "/c");
         }
@@ -335,44 +279,40 @@ export class MapScene extends Phaser.Scene {
         let tileX = Math.floor((xDiff + 2 * yDiff) / blockImageWidth - 0.25);
         let tileY = Math.floor((-xDiff + 2 * yDiff) / blockImageWidth - 0.25);
 
+        // If hovered tile hasn't changed and a shop selection is active, just exit
         if (tileX == this.tileHighlightActiveX && tileY == this.tileHighlightActiveY && this.currentShopSelection) {
             return;
         }
 
-        // Reset tile alpha
+        // Reset tile alpha to default on previous hovered tile
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
             this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
         }
 
         // Update hover image/tile image, cash preview, and alpha
-        let tileHighlighted = false;
-        if (this.currentShopSelection && this.areTileCoordinatesValid(tileX, tileY)) {
+        if (this.areTileCoordinatesValid(tileX, tileY) && map.canPlaceShopSelection(this.currentShopSelection, tileX, tileY)) {
             this.tileHighlightActiveX = tileX;
             this.tileHighlightActiveY = tileY;
             let tileCoords = this.getTileWorldCoordinates(tileX, tileY);
             this.hoverImage.x = tileCoords.x;
             this.hoverImage.y = tileCoords.y;
             this.hoverImage.alpha = hoverImageAlpha;
+            this.updatePreview(tileX, tileY, false);
             // Demolishing existing building
-            if (this.hoverImageType == ShopSelectionType.DEMOLITION && map.getMap()[tileX][tileY].building != null) {
-                tileHighlighted = true;
+            if (this.currentShopSelection.selectionType == ShopSelectionType.DEMOLITION) {
                 this.hoverImage.setScale(tileScale / 2);
                 this.hoverImage.y += buildingYDiff;
-                this.updatePreview(tileX, tileY, false);
             // Placing new tile, building, or both    
-            } else if (map.getMap()[tileX][tileY].building == null && this.hoverImageType != ShopSelectionType.DEMOLITION &&
-                    (this.hoverImageType != ShopSelectionType.TILE_ONLY || map.getMap()[tileX][tileY].tile != this.currentShopSelection.getName())) {
-                tileHighlighted = true;
+            } else {
                 this.hoverImage.setScale(tileScale);
-                if (this.hoverImageType == ShopSelectionType.BUILDING_ONLY) {
+                if (this.currentShopSelection.selectionType == ShopSelectionType.BUILDING_ONLY) {
                     this.hoverImage.y += buildingYDiff;
                 } else {
                     this.tileMapImages[tileX][tileY].alpha = 0;
                 }
-                this.updatePreview(tileX, tileY, false);
             }
-        } 
-        if (!tileHighlighted) {
+        // Hide preview, or show stats for existing building
+        } else {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
             this.hoverImage.alpha = 0;

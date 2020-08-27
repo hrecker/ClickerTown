@@ -1,6 +1,12 @@
 import { getRandomInt } from '../util/Util';
+import { ShopSelectionType } from '../state/UIState';
 
 let map;
+let demolitionCostFraction;
+
+export function setDemolitionCostFraction(costFraction) {
+    demolitionCostFraction = costFraction;
+}
 
 export function initializeMap(tilesJson, width, height) {
     let startingTileNames = Object.keys(tilesJson).
@@ -35,4 +41,35 @@ export function getAdjacentCoordinates(x, y) {
         new Phaser.Math.Vector2(x, y + 1)
     ];
     return result.filter(coords => areCoordinatesValid(coords.x, coords.y));
+}
+
+export function getShopSelectionPrice(jsonCache, selection, targetX, targetY) {
+    if (selection.selectionType == ShopSelectionType.DEMOLITION) {
+        return jsonCache.get('buildings')[map[targetX][targetY].building]['cost'] * demolitionCostFraction;
+    } else {
+        return selection.getPrice(jsonCache);
+    }
+}
+
+export function addShopSelectionToMap(selection, tileMap, x, y) {
+    if (selection.selectionType == ShopSelectionType.DEMOLITION) {
+        tileMap[x][y].building = null;
+    } else {
+        if (selection.selectionType != ShopSelectionType.TILE_ONLY) {
+            tileMap[x][y].building = selection.buildingName;
+        } 
+        if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
+            tileMap[x][y].tile = selection.tileName;
+        }
+    }
+}
+
+// Can only modify/place tiles or buildings on tiles that don't have a building already
+// and do not match the tile being placed.
+// Can only demolish tiles with a placed building.
+export function canPlaceShopSelection(selection, x, y) {
+    return selection && 
+        ((map[x][y].building && selection.selectionType == ShopSelectionType.DEMOLITION) ||
+        (!map[x][y].building && selection.selectionType != ShopSelectionType.DEMOLITION &&
+        (selection.selectionType != ShopSelectionType.TILE_ONLY || map[x][y].tile != selection.getName())));
 }

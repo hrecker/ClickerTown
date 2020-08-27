@@ -1,4 +1,5 @@
 import * as state from '../state/CashState';
+import * as map from '../state/MapState';
 
 // Load json and assets
 export class LoadingScene extends Phaser.Scene {
@@ -23,6 +24,9 @@ export class LoadingScene extends Phaser.Scene {
         state.setCurrentCash(this.cache.json.get('initials')['startingCash']);
         state.setCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
         state.setClickCashValue(this.cache.json.get('initials')['startingClickValue']);
+        state.setStartingCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
+        state.setStartingClickValue(this.cache.json.get('initials')['startingClickValue']);
+        map.setDemolitionCostFraction(this.cache.json.get('initials')['demolishFraction']);
 
         // Load assets
         // Building sprites
@@ -36,6 +40,10 @@ export class LoadingScene extends Phaser.Scene {
             let tile = this.cache.json.get('tiles')[tileName];
             this.load.image(tileName, 'assets/sprites/tiles/' + tile['sprite']);
         }
+        
+        // Initialize tile map
+        map.initializeMap(this.cache.json.get('tiles'),
+            this.cache.json.get('initials')['mapWidth'], this.cache.json.get('initials')['mapHeight']);
         
         this.load.start();
         this.load.once('complete', () => {
