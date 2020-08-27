@@ -116,7 +116,11 @@ export class MapScene extends Phaser.Scene {
             if (this.getShopSelectionPrice(this.currentShopSelection) <= state.getCurrentCash()) {
                 this.placeShopSelection();
             } else {
-                //TODO print message for not enough cash?
+                // Print message for not enough cash. Should only happen for demolition,
+                // as other options will not be selectable in the shop when you can't afford them.
+                let worldCoords = this.getTileWorldCoordinates(this.tileHighlightActiveX, this.tileHighlightActiveY);
+                let coords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - blockImageHeight);
+                this.addTemporaryText("Not enough cash!", negativeCashColor, 24, coords.x, coords.y);
             }
         } else {
             // Otherwise add cash
@@ -292,25 +296,30 @@ export class MapScene extends Phaser.Scene {
     }
 
     addClickCash(event) {
-        // Add cash text animation
-        let clickTextStyle = { font: "48px Verdana", fill: positiveCashColor };
-        let cashClickText = this.game.scene.getScene('UIScene').add.text(
-            event.upX, event.upY, formatCash(state.getClickCashValue()), clickTextStyle);
+        this.addTemporaryText(formatCash(state.getClickCashValue()),
+            positiveCashColor, 48, event.upX, event.upY);
+        state.addCurrentCash(state.getClickCashValue());
+    }
+
+    addTemporaryText(text, color, fontSize, x, y) {
+        let textStyle = { font: fontSize + "px Verdana", fill: color };
+        let textObject = this.game.scene.getScene('UIScene').add.text(
+            x, y, text, textStyle);
+        textObject.setOrigin(0.5, 0.5);
+        // Add text animation
         this.add.tween({
-            targets: [cashClickText],
+            targets: [textObject],
             ease: 'Sine.easeInOut',
             duration: 1000,
             delay: 0,
             y: {
-              getStart: () => cashClickText.y,
-              getEnd: () => cashClickText.y - 50
+                getStart: () => textObject.y,
+                getEnd: () => textObject.y - 50
             },
             onComplete: () => {
-              cashClickText.destroy();
+                textObject.destroy();
             }
           });
-
-        state.addCurrentCash(state.getClickCashValue());
     }
 
     updateTileHighlight() {
@@ -376,6 +385,18 @@ export class MapScene extends Phaser.Scene {
         let xDiff = (tileX - tileY) * blockImageWidth / 2;
         let yDiff = (tileX + tileY) * -blockImageWidth / 4;
         return new Phaser.Math.Vector2(this.mapOriginX + xDiff, this.mapOriginY + yDiff);
+    }
+
+    // https://phaser.discourse.group/t/object-position-to-canvas-pixel-position/1099/2
+    worldCoordinatesToCanvasCoordinates(x, y) {
+        let cam = this.cameras.main;
+        let displayScale = cam.scaleManager.displayScale;
+        let mat = cam.matrix;
+        let tx = mat.getX(x - cam.scrollX, y - cam.scrollY) / displayScale.x;
+        let ty = mat.getY(x - cam.scrollX, y - cam.scrollY) / displayScale.y;
+        x = Math.round(tx);
+        y = Math.round(ty);
+        return new Phaser.Math.Vector2(x, y);
     }
 
     areTileCoordinatesValid(x, y) {
