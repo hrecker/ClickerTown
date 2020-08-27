@@ -10,9 +10,9 @@ const blockImageHeight = 100 * tileScale;
 const blockImageWidth = 132 * tileScale;
 const buildingYDiff = 0.325 * -blockImageWidth;
 const hoverImageAlpha = 0.65;
-const previewWidth = 120;
-const previewHeight = 75;
-const previewTextMargin = 5;
+const previewWidth = 180;
+const previewHeight = 110;
+const previewTextMargin = 7;
 const positiveCashColor = "#15b800";
 const negativeCashColor = "#f54242";
 
@@ -36,6 +36,9 @@ export class MapScene extends Phaser.Scene {
         
         this.tileHighlightActiveX = -1;
         this.tileHighlightActiveY = -1;
+
+        // UI scene - used for elements which should not scale with game zoom
+        this.uiScene = this.game.scene.getScene('UIScene');
 
         // Background
         this.cameras.main.setBackgroundColor("#4287f5");
@@ -71,15 +74,15 @@ export class MapScene extends Phaser.Scene {
         this.controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
 
         // Cash rate preview for new buildings
-        let previewTextStyle = { font: "16px Courier", align: "center", fill: "black" };
-        this.previewRect = this.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0);
+        let previewTextStyle = { font: "24px Courier", align: "center", fill: "black" };
+        this.previewRect = this.uiScene.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0);
         this.previewRect.setOrigin(0.5, 1);
         this.previewRect.alpha = 0.6;
-        this.previewTextCost = this.add.text(0, 0, "", previewTextStyle);
+        this.previewTextCost = this.uiScene.add.text(0, 0, "", previewTextStyle);
         this.previewTextCost.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.previewTextGrowthRate = this.add.text(0, 0, "", previewTextStyle);
+        this.previewTextGrowthRate = this.uiScene.add.text(0, 0, "", previewTextStyle);
         this.previewTextGrowthRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.previewTextClickRate = this.add.text(0, 0, "", previewTextStyle);
+        this.previewTextClickRate = this.uiScene.add.text(0, 0, "", previewTextStyle);
         this.previewTextClickRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
         this.hidePreview();
         
@@ -223,9 +226,10 @@ export class MapScene extends Phaser.Scene {
     }
 
     updatePreview(x, y, showExistingBuildingRates) {
-        let coords = this.getTileWorldCoordinates(x, y);
-        this.previewRect.x = coords.x;
-        this.previewRect.y = coords.y - 150;
+        let worldCoords = this.getTileWorldCoordinates(x, y);
+        let previewCoords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - 150);
+        this.previewRect.x = previewCoords.x;
+        this.previewRect.y = previewCoords.y;
         this.previewTextCost.x = this.previewRect.getTopLeft().x + previewTextMargin;
         this.previewTextCost.y = this.previewRect.getTopLeft().y + previewTextMargin;
         this.previewTextGrowthRate.x = this.previewRect.getTopLeft().x + previewTextMargin;
@@ -252,7 +256,7 @@ export class MapScene extends Phaser.Scene {
             this.previewTextCost.setText(name);
             this.previewTextCost.setColor("#000000");
             this.updatePreviewText(this.previewTextGrowthRate, cashGrowthRate, "/s");
-            this.updatePreviewText(this.previewTextClickRate, clickValue, "/s");
+            this.updatePreviewText(this.previewTextClickRate, clickValue, "/c");
         // Showing shop selection rates
         } else {
             let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
@@ -266,7 +270,7 @@ export class MapScene extends Phaser.Scene {
             // Update preview rate text
             this.updatePreviewText(this.previewTextCost, -1 * this.getShopSelectionPrice(this.currentShopSelection), "");
             this.updatePreviewText(this.previewTextGrowthRate, rateDiffs.cashGrowthRate, "/s");
-            this.updatePreviewText(this.previewTextClickRate, rateDiffs.clickValue, "/s");
+            this.updatePreviewText(this.previewTextClickRate, rateDiffs.clickValue, "/c");
         }
 
         this.previewRect.setVisible(true);
@@ -303,8 +307,7 @@ export class MapScene extends Phaser.Scene {
 
     addTemporaryText(text, color, fontSize, x, y) {
         let textStyle = { font: fontSize + "px Verdana", fill: color };
-        let textObject = this.game.scene.getScene('UIScene').add.text(
-            x, y, text, textStyle);
+        let textObject = this.uiScene.add.text(x, y, text, textStyle);
         textObject.setOrigin(0.5, 0.5);
         // Add text animation
         this.add.tween({
