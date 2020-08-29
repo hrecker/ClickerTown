@@ -1,7 +1,7 @@
 import * as state from '../state/CashState';
 import * as date from '../state/DateState';
 import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection } from '../state/UIState';
-import { formatCash } from '../util/Util';
+import { formatCash, formatDate } from '../util/Util';
 
 const imageScale = 0.4;
 const topShopSelectionY = 80;
@@ -43,13 +43,13 @@ export class UIScene extends Phaser.Scene {
         let dateRect = this.add.rectangle(this.game.renderer.width / 2, this.game.renderer.height, 250, 30, 0x000000);
         dateRect.setOrigin(0.5, 1);
         this.currentDateText = this.add.text(this.game.renderer.width / 2, this.game.renderer.height - 15,
-            date.getCurrentDateString(), dateTextStyle);
+            formatDate(date.getCurrentDate()), dateTextStyle);
         this.currentDateText.setOrigin(0.5);
 
         // State listeners
         state.addCurrentCashListener(this.cashChangeListener, this);
         state.addCashGrowthListener(this.cashGrowthListener, this);
-        date.addCurrentDateStringListener(this.dateStringListener, this);
+        date.addCurrentDateListener(this.currentDateListener, this);
 
         // Cash growth timer
         this.lastCashGrowth = -1;
@@ -201,8 +201,8 @@ export class UIScene extends Phaser.Scene {
         state.addCurrentCash(seconds * state.getCashGrowthRate());
     }
 
-    dateStringListener(dateString, scene) {
-        scene.currentDateText.setText(dateString);
+    currentDateListener(currentDate, scene) {
+        scene.currentDateText.setText(formatDate(currentDate));
     }
 
     // Add cash every second

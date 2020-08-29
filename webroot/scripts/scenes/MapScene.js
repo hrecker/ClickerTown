@@ -2,7 +2,7 @@ import * as state from '../state/CashState';
 import * as map from '../state/MapState';
 import * as build from '../model/Building';
 import * as tile from '../model/Tile';
-import { ShopSelectionType, addShopSelectionListener } from '../state/UIState';
+import { ShopSelection, ShopSelectionType, addShopSelectionListener } from '../state/UIState';
 import { formatCash } from '../util/Util';
 
 const tileScale = 1;
@@ -50,8 +50,9 @@ export class MapScene extends Phaser.Scene {
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
         
-        // Shop selection listener
+        // Listeners
         addShopSelectionListener(this.shopSelectionListener, this);
+        map.addBuildingCollapseListener(this.buildingCollapseListener, this);
 
         // Camera control
         var controlConfig = {
@@ -135,6 +136,19 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
+    removeBuilding(tileMap, x, y) {
+        this.buildingImages[x][y].setVisible(false);
+        this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
+        this.tileMapImages[x][y].alpha = 1;
+        this.tileHighlightActiveX = -1;
+        this.tileHighlightActiveY = -1;
+    }
+
+    buildingCollapseListener(coords, scene) {
+        scene.removeBuilding(map.getMap(), coords.x, coords.y);
+        state.updateCashRates(scene.cache.json, map.getMap());
+    }
+
     placeShopSelection() {
         let x = this.tileHighlightActiveX;
         let y = this.tileHighlightActiveY;
@@ -150,9 +164,7 @@ export class MapScene extends Phaser.Scene {
 
             // Update displayed sprites
             if (selection.selectionType == ShopSelectionType.DEMOLITION) {
-                this.buildingImages[x][y].setVisible(false);
-                this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
-                this.tileMapImages[x][y].alpha = 1;
+                this.removeBuilding(tileMap, x, y);
             } else if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
                 this.tileMapImages[x][y].setTexture(selection.getName());
                 this.tileMapImages[x][y].alpha = 1;

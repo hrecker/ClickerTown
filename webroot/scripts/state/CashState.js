@@ -38,7 +38,7 @@ export function setCashGrowthRate(growthRate) {
 
     cashGrowthRateCents = centsGrowthRate;
     cashGrowthCallbacks.forEach(callback => 
-        callback.callback(getCashGrowthRate(), callback.scene));
+        callback.callback(getCashGrowthRate(), callback.context));
 }
 
 export function getClickCashValue() {
@@ -53,7 +53,7 @@ export function setClickCashValue(cashValue) {
 
     clickCashValueCents = cashValueCents;
     clickCashCallbacks.forEach(callback => 
-        callback.callback(getClickCashValue(), callback.scene));
+        callback.callback(getClickCashValue(), callback.context));
 }
 
 export function getCurrentCash() {
@@ -72,27 +72,27 @@ export function setCurrentCash(cash) {
 
     currentCashCents = cashCents;
     currentCashCallbacks.forEach(callback => 
-        callback.callback(getCurrentCash(), callback.scene));
+        callback.callback(getCurrentCash(), callback.context));
 }
 
-export function addCurrentCashListener(callback, scene) {
+export function addCurrentCashListener(callback, context) {
     currentCashCallbacks.push({ 
         callback: callback,
-        scene: scene
+        context: context
     });
 }
 
-export function addCashGrowthListener(callback, scene) {
+export function addCashGrowthListener(callback, context) {
     cashGrowthCallbacks.push({ 
         callback: callback,
-        scene: scene
+        context: context
     });
 }
 
-export function addClickCashListener(callback, scene) {
+export function addClickCashListener(callback, context) {
     clickCashCallbacks.push({ 
         callback: callback,
-        scene: scene
+        context: context
     });
 }
 

@@ -9,6 +9,7 @@ Buildings
     - TILE_AND_BUILDING: both a set tile and the building
 - baseCashGrowthRate: how much this building increases/decreases your cash growth rate
 - baseClickValue: how much this building increases/decreases the amount of cash you get per click
+- collapseDays: how many days after being built does this building collapse
 
 
 Tiles

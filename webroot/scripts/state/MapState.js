@@ -1,8 +1,14 @@
-import { getRandomInt } from '../util/Util';
-import { ShopSelectionType } from '../state/UIState';
+import { getRandomInt, daysBetween } from '../util/Util';
+import { ShopSelection, ShopSelectionType } from '../state/UIState';
+import * as date from '../state/DateState';
 
+// Map is a 2D array of objects containing up to three properties
+// "tile": name of the tile in this location
+// "building": name of the building in this location, or null if there is none
+// "buildDate": date that the building in this location was built, or null if there is no building here
 let map;
 let demolitionCostFraction;
+let buildingCollapseCallbacks = [];
 
 export function setDemolitionCostFraction(costFraction) {
     demolitionCostFraction = costFraction;
@@ -54,9 +60,11 @@ export function getShopSelectionPrice(jsonCache, selection, targetX, targetY) {
 export function addShopSelectionToMap(selection, tileMap, x, y) {
     if (selection.selectionType == ShopSelectionType.DEMOLITION) {
         tileMap[x][y].building = null;
+        tileMap[x][y].buildDate = null;
     } else {
         if (selection.selectionType != ShopSelectionType.TILE_ONLY) {
             tileMap[x][y].building = selection.buildingName;
+            tileMap[x][y].buildDate = new Date(date.getCurrentDate());
         } 
         if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
             tileMap[x][y].tile = selection.tileName;
@@ -72,4 +80,26 @@ export function canPlaceShopSelection(selection, x, y) {
         ((map[x][y].building && selection.selectionType == ShopSelectionType.DEMOLITION) ||
         (!map[x][y].building && selection.selectionType != ShopSelectionType.DEMOLITION &&
         (selection.selectionType != ShopSelectionType.TILE_ONLY || map[x][y].tile != selection.getName())));
+}
+
+export function addBuildingCollapseListener(callback, context) {
+    buildingCollapseCallbacks.push({ 
+        callback: callback,
+        context: context
+    });
+}
+
+export function currentDateListener(date, jsonCache) {
+    for (let x = 0; x < map.length; x++) {
+        for (let y = 0; y < map[x].length; y++) {
+            // Check for building collapse
+            if (map[x][y].building && daysBetween(map[x][y].buildDate, date) >= 
+                    jsonCache.get('buildings')[map[x][y].building]['collapseDays']) {
+                // Demolish the building
+                addShopSelectionToMap(new ShopSelection(ShopSelectionType.DEMOLITION), map, x, y);
+                buildingCollapseCallbacks.forEach(callback => 
+                    callback.callback(new Phaser.Math.Vector2(x, y), callback.context));
+            }
+        }
+    }
 }

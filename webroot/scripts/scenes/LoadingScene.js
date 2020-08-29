@@ -1,6 +1,6 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
-import { setCurrentDate } from '../state/DateState';
+import { setCurrentDate, addCurrentDateListener } from '../state/DateState';
 
 // Load json and assets
 export class LoadingScene extends Phaser.Scene {
@@ -52,6 +52,9 @@ export class LoadingScene extends Phaser.Scene {
         // Initialize tile map
         map.initializeMap(this.cache.json.get('tiles'),
             this.cache.json.get('initials')['mapWidth'], this.cache.json.get('initials')['mapHeight']);
+
+        // Map listener for date to handle building collapse
+        addCurrentDateListener(map.currentDateListener, this.cache.json);
         
         this.load.start();
         this.load.once('complete', () => {
