@@ -3,3 +3,5 @@ See www.kenney.nl
 
 Bomb image from https://icon-library.com/icon/bomb-icon-24.html
 
+Rock/rubble image https://cliparting.com/free-rock-clipart-23460/
+

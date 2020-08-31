@@ -53,7 +53,7 @@ export class LoadingScene extends Phaser.Scene {
         map.initializeMap(this.cache.json.get('tiles'),
             this.cache.json.get('initials')['mapWidth'], this.cache.json.get('initials')['mapHeight']);
 
-        // Map listener for date to handle building collapse
+        // Map listener for date to handle building degrade and collapse
         addCurrentDateListener(map.currentDateListener, this.cache.json);
         
         this.load.start();

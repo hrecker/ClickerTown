@@ -67,7 +67,9 @@ export class UIScene extends Phaser.Scene {
         // Buildings
         for (let buildingName in this.cache.json.get('buildings')) {
             let building = this.cache.json.get('buildings')[buildingName];
-            this.shopItems.push({ selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) });
+            if (building['shopSelectionType']) {
+                this.shopItems.push({ selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) });
+            }
         }
         // Tiles
         for (let tileName in this.cache.json.get('tiles')) {
