@@ -218,8 +218,12 @@ export class UIScene extends Phaser.Scene {
         // Update date and cash every second
         if (timePassed >= 1000) {
             let secondsPassed = Math.floor(timePassed / 1000);
-            this.addCashPerSecond(secondsPassed);
-            date.addDays(secondsPassed);
+            // Step through seconds one by one to handle date changes affecting
+            // building output when buildings become degraded/collapse
+            for (let i = 0; i < secondsPassed; i++) {
+                this.addCashPerSecond(1);
+                date.addDays(1);
+            }
             let timeRemainder = timePassed - (secondsPassed * 1000);
             this.lastCashGrowth = now - timeRemainder;
         }
