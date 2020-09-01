@@ -1,6 +1,9 @@
 import { getRandomInt } from '../util/Util';
 import { ShopSelectionType } from '../state/UIState';
 
+// Map is a 2D array of objects containing up to two properties	
+// "tile": name of the tile in this location	
+// "building": name of the building in this location, or null if there is none
 let map;
 let demolitionCostFraction;
 

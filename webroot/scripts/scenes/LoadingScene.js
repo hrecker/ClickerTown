@@ -20,7 +20,7 @@ export class LoadingScene extends Phaser.Scene {
     }
 
     create() {
-        // Set initial cash values
+        // Set various initial values from json
         state.setCurrentCash(this.cache.json.get('initials')['startingCash']);
         state.setCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
         state.setClickCashValue(this.cache.json.get('initials')['startingClickValue']);

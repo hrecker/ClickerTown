@@ -244,9 +244,11 @@ export class MapScene extends Phaser.Scene {
     }
 
     addClickCash(event) {
-        this.addTemporaryText(formatCash(state.getClickCashValue()),
+        // Always give at least one cent per click, just to be merciful
+        let clickCash = Math.max(state.getClickCashValue(), 0.01);	
+        this.addTemporaryText(formatCash(clickCash),	
             positiveCashColor, 48, event.upX, event.upY);
-        state.addCurrentCash(state.getClickCashValue());
+        state.addCurrentCash(clickCash);
     }
 
     addTemporaryText(text, color, fontSize, x, y) {

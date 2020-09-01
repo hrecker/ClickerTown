@@ -5,7 +5,7 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
         return 0;
     }
     let building = buildingsJson[map[x][y].building];
-    let baseCashGrowthRate = building['baseCashGrowthRate'];
+    let cashGrowthRate = building['baseCashGrowthRate'];
 
     let adjacentTiles = getAdjacentCoordinates(x, y);
     switch (building['name']) {
@@ -13,7 +13,7 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
             // Convenience Store gets -1 growth rate for adjacent Convenience Stores
             adjacentTiles.forEach(adjacent => {
                 if (map[adjacent.x][adjacent.y].building == "Convenience Store") {
-                    baseCashGrowthRate -= 1;
+                    cashGrowthRate -= 1;
                 }
             });
             break;
@@ -21,7 +21,7 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
             // Restaraunts get +1 growth rate for adjacent grass tiles
             adjacentTiles.forEach(adjacent => {
                 if (map[adjacent.x][adjacent.y].tile == "Grass") {
-                    baseCashGrowthRate += 1;
+                    cashGrowthRate += 1;
                 }
             });
             break;
@@ -30,15 +30,15 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
             adjacentTiles.forEach(adjacent => {
                 let building = map[adjacent.x][adjacent.y].building;
                 if (building == "Bank") {
-                    baseCashGrowthRate -= 10;
+                    cashGrowthRate -= 10;
                 } else if (building) {
-                    baseCashGrowthRate += 2;
+                    cashGrowthRate += 2;
                 }
             });
             break;
     }
 
-    return baseCashGrowthRate;
+    return cashGrowthRate;
 }
 
 export function getBuildingClickValue(buildingsJson, map, x, y) {
@@ -46,6 +46,6 @@ export function getBuildingClickValue(buildingsJson, map, x, y) {
         return 0;
     }
     let building = buildingsJson[map[x][y].building];
-    let baseClickValue = building['baseClickValue'];
-    return baseClickValue;
+    let clickValue = building['baseClickValue'];
+    return clickValue;
 }

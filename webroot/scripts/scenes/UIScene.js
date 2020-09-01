@@ -26,16 +26,14 @@ export class UIScene extends Phaser.Scene {
         let tooltipTextStyle = { font: "14px Courier", fill: "#000000", align: "left", wordWrap: { width: (tooltipWidth - 2 * tooltipTextMargin), useAdvancedWrap: true } }
         let priceTextStyle = { font: "bold 10px Verdana", fill: "#000000", align: "center" };
 
-        //TODO handle really large cash values
         // Cash UI
         this.add.rectangle(this.game.renderer.width / 2, 25, 350, 50, 0x404040);
         this.add.rectangle(this.game.renderer.width / 2, 65, 200, 30, 0x000000);
-        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25, '$', titleTextStyle);
-        this.currentCashText.setText(formatCash(state.getCurrentCash()));
+        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25,
+            formatCash(state.getCurrentCash()), titleTextStyle);
         this.currentCashText.setOrigin(0.5);
-        //TODO positive/negative sign
-        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '$', subtitleTextStyle);
-        this.cashGrowthRateText.setText(formatCash(state.getCashGrowthRate()));
+        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, 
+            formatCash(state.getCashGrowthRate()), subtitleTextStyle);
         this.cashGrowthRateText.setOrigin(0.5);
 
         // Cash listeners
