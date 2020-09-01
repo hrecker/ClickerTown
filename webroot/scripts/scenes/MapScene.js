@@ -50,10 +50,8 @@ export class MapScene extends Phaser.Scene {
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
         
-        // Listeners
+        // Shop selection listener
         addShopSelectionListener(this.shopSelectionListener, this);
-        map.addBuildingCollapseListener(this.buildingCollapseListener, this);
-        map.addBuildingDegradedListener(this.buildingDegradedListener, this);
 
         // Camera control
         var controlConfig = {
@@ -137,37 +135,6 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
-    buildingDegradedListener(coords, scene) {
-        // Highlight degraded buildings red
-        scene.tileMapImages[coords.x][coords.y].setTint(0xff0000);
-        state.updateCashRates(scene.cache.json, map.getMap());
-        this.tileHighlightActiveX = -1;
-        this.tileHighlightActiveY = -1;
-    }
-
-    removeBuilding(tileMap, x, y) {
-        this.buildingImages[x][y].setVisible(false);
-        this.buildingImages[x][y].setTint(0xffffff);
-        this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
-        this.tileMapImages[x][y].alpha = 1;
-        this.tileMapImages[x][y].setTint(0xffffff);
-        this.tileHighlightActiveX = -1;
-        this.tileHighlightActiveY = -1;
-    }
-
-    buildingCollapseListener(coords, scene) {
-        // Building will now show rubble
-        scene.buildingImages[coords.x][coords.y].setVisible(true);
-        scene.buildingImages[coords.x][coords.y].setTint(0xffffff);
-        scene.buildingImages[coords.x][coords.y].setTexture(map.getMap()[coords.x][coords.y].building);
-        scene.tileMapImages[coords.x][coords.y].setTexture(map.getMap()[coords.x][coords.y].tile);
-        scene.tileMapImages[coords.x][coords.y].alpha = 1;
-        scene.tileMapImages[coords.x][coords.y].setTint(0xffffff);
-        scene.tileHighlightActiveX = -1;
-        scene.tileHighlightActiveY = -1;
-        state.updateCashRates(scene.cache.json, map.getMap());
-    }
-
     placeShopSelection() {
         let x = this.tileHighlightActiveX;
         let y = this.tileHighlightActiveY;
@@ -183,7 +150,9 @@ export class MapScene extends Phaser.Scene {
 
             // Update displayed sprites
             if (selection.selectionType == ShopSelectionType.DEMOLITION) {
-                this.removeBuilding(tileMap, x, y);
+                this.buildingImages[x][y].setVisible(false);
+                this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
+                this.tileMapImages[x][y].alpha = 1;
             } else if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
                 this.tileMapImages[x][y].setTexture(selection.getName());
                 this.tileMapImages[x][y].alpha = 1;
@@ -218,12 +187,6 @@ export class MapScene extends Phaser.Scene {
             let clickValue;
             if (map.getMap()[x][y].building) {
                 name = map.getMap()[x][y].building;
-                if (map.getMap()[x][y].degraded) {
-                    name = "(D)" + name;
-                    this.previewTextCost.setColor(negativeCashColor);
-                } else {
-                    this.previewTextCost.setColor("#000000");
-                }
                 cashGrowthRate = build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), map.getMap(), x, y);
                 clickValue = build.getBuildingClickValue(this.cache.json.get('buildings'), map.getMap(), x, y);
             } else {
@@ -234,6 +197,7 @@ export class MapScene extends Phaser.Scene {
 
             // Update preview rate text
             this.previewTextCost.setText(name);
+            this.previewTextCost.setColor("#000000");
             this.updatePreviewText(this.previewTextGrowthRate, cashGrowthRate, "/s");
             this.updatePreviewText(this.previewTextClickRate, clickValue, "/c");
         // Showing shop selection rates
@@ -280,11 +244,9 @@ export class MapScene extends Phaser.Scene {
     }
 
     addClickCash(event) {
-        // Always give at least one cent per click, just to be merciful
-        let clickCash = Math.max(state.getClickCashValue(), 0.01);
-        this.addTemporaryText(formatCash(clickCash),
+        this.addTemporaryText(formatCash(state.getClickCashValue()),
             positiveCashColor, 48, event.upX, event.upY);
-        state.addCurrentCash(clickCash);
+        state.addCurrentCash(state.getClickCashValue());
     }
 
     addTemporaryText(text, color, fontSize, x, y) {

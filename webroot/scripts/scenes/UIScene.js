@@ -1,7 +1,6 @@
 import * as state from '../state/CashState';
-import * as date from '../state/DateState';
 import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection } from '../state/UIState';
-import { formatCash, formatDate } from '../util/Util';
+import { formatCash } from '../util/Util';
 
 const imageScale = 0.4;
 const topShopSelectionY = 80;
@@ -23,33 +22,25 @@ export class UIScene extends Phaser.Scene {
         // UI
         let titleTextStyle = { font: "bold 32px Verdana", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
         let subtitleTextStyle = { font: "bold 24px Verdana", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
-        let dateTextStyle = { font: "bold 20px Courier", fill: "#ffffff", boundsAlignH: "center", boundsAlignV: "middle" };
         let shopTextStyle = { font: "bold 30px Arial", boundsAlignH: "center", boundsAlignV: "middle" };
         let tooltipTextStyle = { font: "14px Courier", fill: "#000000", align: "left", wordWrap: { width: (tooltipWidth - 2 * tooltipTextMargin), useAdvancedWrap: true } }
         let priceTextStyle = { font: "bold 10px Verdana", fill: "#000000", align: "center" };
 
-        //TODO handle really large cash values?
+        //TODO handle really large cash values
         // Cash UI
         this.add.rectangle(this.game.renderer.width / 2, 25, 350, 50, 0x404040);
         this.add.rectangle(this.game.renderer.width / 2, 65, 200, 30, 0x000000);
-        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25, 
-            formatCash(state.getCurrentCash()), titleTextStyle);
+        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25, '$', titleTextStyle);
+        this.currentCashText.setText(formatCash(state.getCurrentCash()));
         this.currentCashText.setOrigin(0.5);
-        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65,
-            formatCash(state.getCashGrowthRate()), subtitleTextStyle);
+        //TODO positive/negative sign
+        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, '$', subtitleTextStyle);
+        this.cashGrowthRateText.setText(formatCash(state.getCashGrowthRate()));
         this.cashGrowthRateText.setOrigin(0.5);
 
-        // Date UI
-        let dateRect = this.add.rectangle(this.game.renderer.width / 2, this.game.renderer.height, 250, 30, 0x000000);
-        dateRect.setOrigin(0.5, 1);
-        this.currentDateText = this.add.text(this.game.renderer.width / 2, this.game.renderer.height - 15,
-            formatDate(date.getCurrentDate()), dateTextStyle);
-        this.currentDateText.setOrigin(0.5);
-
-        // State listeners
+        // Cash listeners
         state.addCurrentCashListener(this.cashChangeListener, this);
         state.addCashGrowthListener(this.cashGrowthListener, this);
-        date.addCurrentDateListener(this.currentDateListener, this);
 
         // Cash growth timer
         this.lastCashGrowth = -1;
@@ -67,9 +58,7 @@ export class UIScene extends Phaser.Scene {
         // Buildings
         for (let buildingName in this.cache.json.get('buildings')) {
             let building = this.cache.json.get('buildings')[buildingName];
-            if (building['shopSelectionType']) {
-                this.shopItems.push({ selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) });
-            }
+            this.shopItems.push({ selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) });
         }
         // Tiles
         for (let tileName in this.cache.json.get('tiles')) {
@@ -203,10 +192,6 @@ export class UIScene extends Phaser.Scene {
         state.addCurrentCash(seconds * state.getCashGrowthRate());
     }
 
-    currentDateListener(currentDate, scene) {
-        scene.currentDateText.setText(formatDate(currentDate));
-    }
-
     // Add cash every second
     update() {
         let now = Date.now();
@@ -215,15 +200,9 @@ export class UIScene extends Phaser.Scene {
         }
         
         let timePassed = now - this.lastCashGrowth;
-        // Update date and cash every second
         if (timePassed >= 1000) {
             let secondsPassed = Math.floor(timePassed / 1000);
-            // Step through seconds one by one to handle date changes affecting
-            // building output when buildings become degraded/collapse
-            for (let i = 0; i < secondsPassed; i++) {
-                this.addCashPerSecond(1);
-                date.addDays(1);
-            }
+            this.addCashPerSecond(secondsPassed);
             let timeRemainder = timePassed - (secondsPassed * 1000);
             this.lastCashGrowth = now - timeRemainder;
         }

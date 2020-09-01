@@ -9,8 +9,6 @@ Buildings
     - TILE_AND_BUILDING: both a set tile and the building
 - baseCashGrowthRate: how much this building increases/decreases your cash growth rate
 - baseClickValue: how much this building increases/decreases the amount of cash you get per click
-- degradeDays: how many days after being built does this building start to degrade
-- collapseDays: how many days after being built does this building collapse
 
 
 Tiles
@@ -30,5 +28,4 @@ Initials
 - mapWidth: width of map in tiles
 - mapHeight: height of map in tiles
 - demolishFraction: fraction of building cost paid to demolish a building
-- initialYear: year the game will start on
 

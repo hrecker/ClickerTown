@@ -4,6 +4,5 @@
     "startingClickValue": 1,
     "mapWidth": 8,
     "mapHeight": 8,
-    "demolishFraction": 0.5,
-    "initialYear": "2000"
+    "demolishFraction": 0.5
 }

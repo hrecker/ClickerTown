@@ -12,17 +12,17 @@ let shopSelectionCallbacks = [];
 export function setShopSelection(selection) {
     shopSelection = selection;
     shopSelectionCallbacks.forEach(callback => 
-        callback.callback(shopSelection, callback.context));
+        callback.callback(shopSelection, callback.scene));
 }
 
 export function getShopSelection() {
     return shopSelection;
 }
 
-export function addShopSelectionListener(callback, context) {
+export function addShopSelectionListener(callback, scene) {
     shopSelectionCallbacks.push({ 
         callback: callback,
-        context: context
+        scene: scene
     });
 }
 

@@ -1,6 +1,5 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
-import { setCurrentDate, addCurrentDateListener } from '../state/DateState';
 
 // Load json and assets
 export class LoadingScene extends Phaser.Scene {
@@ -21,20 +20,13 @@ export class LoadingScene extends Phaser.Scene {
     }
 
     create() {
-        // Set various initial values
+        // Set initial cash values
         state.setCurrentCash(this.cache.json.get('initials')['startingCash']);
         state.setCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
         state.setClickCashValue(this.cache.json.get('initials')['startingClickValue']);
         state.setStartingCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
         state.setStartingClickValue(this.cache.json.get('initials')['startingClickValue']);
         map.setDemolitionCostFraction(this.cache.json.get('initials')['demolishFraction']);
-
-        // Start on January 1 of the chosen year
-        let date = new Date();
-        date.setFullYear(this.cache.json.get('initials')['initialYear']);
-        date.setMonth(0);
-        date.setDate(1);
-        setCurrentDate(date);
 
         // Load assets
         // Building sprites
@@ -52,9 +44,6 @@ export class LoadingScene extends Phaser.Scene {
         // Initialize tile map
         map.initializeMap(this.cache.json.get('tiles'),
             this.cache.json.get('initials')['mapWidth'], this.cache.json.get('initials')['mapHeight']);
-
-        // Map listener for date to handle building degrade and collapse
-        addCurrentDateListener(map.currentDateListener, this.cache.json);
         
         this.load.start();
         this.load.once('complete', () => {

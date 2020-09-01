@@ -7,9 +7,7 @@
         "cost": 20,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 3,
-        "baseClickValue": 0,
-        "degradeDays": 270,
-        "collapseDays": 300
+        "baseClickValue": 0
     },
     "Restaurant": {
         "name": "Restaurant",
@@ -19,9 +17,7 @@
         "cost": 25,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 3,
-        "baseClickValue": 0.2,
-        "degradeDays": 210,
-        "collapseDays": 240
+        "baseClickValue": 0.2
     },
     "Bank": {
         "name": "Bank",
@@ -31,16 +27,6 @@
         "cost": 100,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 15,
-        "baseClickValue": 0.5,
-        "degradeDays": 540,
-        "collapseDays": 600
-    },
-    "Rubble": {
-        "name": "Rubble",
-        "description": "-1 growth rate for each adjacent building, -0.1 click value for each adjacent building",
-        "sprite": "rubble.png",
-        "cost": 0,
-        "baseCashGrowthRate": -1,
-        "baseClickValue": -0.25
+        "baseClickValue": 0.5
     }
 }
