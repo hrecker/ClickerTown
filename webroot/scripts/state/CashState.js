@@ -3,9 +3,10 @@ import * as tile from '../model/Tile';
 
 let startingCashGrowthRate;
 let startingClickValue;
-let currentCashCents;
-let cashGrowthRateCents;
-let clickCashValueCents;
+// Store cash in decicents (mills, or tenths of a cent), to allow updating cash value every tenth of a second
+let currentCashDecicents;
+let cashGrowthRateDecicents;
+let clickCashValueDecicents;
 let currentCashCallbacks = [];
 let cashGrowthCallbacks = [];
 let clickCashCallbacks = [];
@@ -18,46 +19,46 @@ export function setStartingClickValue(clickValue) {
     startingClickValue = clickValue;
 }
 
-function dollarsToCents(dollars) {
-    return Math.round(dollars * 100);
+function dollarsToDecicents(dollars) {
+    return Math.round(dollars * 1000);
 }
 
-function centsToDollars(cents) {
-    return cents / 100.0;
+function decicentsToDollars(decicents) {
+    return decicents / 1000.0;
 }
 
 export function getCashGrowthRate() {
-    return centsToDollars(cashGrowthRateCents);
+    return decicentsToDollars(cashGrowthRateDecicents);
 }
 
 export function setCashGrowthRate(growthRate) {
-    let centsGrowthRate = dollarsToCents(growthRate);
-    if (centsGrowthRate == cashGrowthRateCents) {
+    let decicentsGrowthRate = dollarsToDecicents(growthRate);
+    if (decicentsGrowthRate == cashGrowthRateDecicents) {
         return;
     }
 
-    cashGrowthRateCents = centsGrowthRate;
+    cashGrowthRateDecicents = decicentsGrowthRate;
     cashGrowthCallbacks.forEach(callback => 
         callback.callback(getCashGrowthRate(), callback.scene));
 }
 
 export function getClickCashValue() {
-    return centsToDollars(clickCashValueCents);
+    return decicentsToDollars(clickCashValueDecicents);
 }
 
 export function setClickCashValue(cashValue) {
-    let cashValueCents = dollarsToCents(cashValue);
-    if (cashValueCents == clickCashValueCents) {
+    let cashValueDecicents = dollarsToDecicents(cashValue);
+    if (cashValueDecicents == clickCashValueDecicents) {
         return;
     }
 
-    clickCashValueCents = cashValueCents;
+    clickCashValueDecicents = cashValueDecicents;
     clickCashCallbacks.forEach(callback => 
         callback.callback(getClickCashValue(), callback.scene));
 }
 
 export function getCurrentCash() {
-    return centsToDollars(currentCashCents);
+    return decicentsToDollars(currentCashDecicents);
 }
 
 export function addCurrentCash(cash) {
@@ -65,12 +66,12 @@ export function addCurrentCash(cash) {
 }
 
 export function setCurrentCash(cash) {
-    let cashCents = dollarsToCents(cash);
-    if (cashCents == currentCashCents) {
+    let cashDecicents = dollarsToDecicents(cash);
+    if (cashDecicents == currentCashDecicents) {
         return;
     }
 
-    currentCashCents = cashCents;
+    currentCashDecicents = cashDecicents;
     currentCashCallbacks.forEach(callback => 
         callback.callback(getCurrentCash(), callback.scene));
 }

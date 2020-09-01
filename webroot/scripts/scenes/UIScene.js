@@ -190,7 +190,7 @@ export class UIScene extends Phaser.Scene {
         state.addCurrentCash(seconds * state.getCashGrowthRate());
     }
 
-    // Add cash every second
+    // Add cash every tenth of a second
     update() {
         let now = Date.now();
         if (this.lastCashGrowth === -1) {
@@ -198,10 +198,10 @@ export class UIScene extends Phaser.Scene {
         }
         
         let timePassed = now - this.lastCashGrowth;
-        if (timePassed >= 1000) {
-            let secondsPassed = Math.floor(timePassed / 1000);
-            this.addCashPerSecond(secondsPassed);
-            let timeRemainder = timePassed - (secondsPassed * 1000);
+        if (timePassed >= 100) {
+            let decisecondsPassed = Math.floor(timePassed / 100);
+            this.addCashPerSecond(decisecondsPassed / 10.0);
+            let timeRemainder = timePassed - (decisecondsPassed * 100);
             this.lastCashGrowth = now - timeRemainder;
         }
     }
