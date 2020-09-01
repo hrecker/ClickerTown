@@ -93,7 +93,7 @@ export class MapScene extends Phaser.Scene {
             this.tileMapImages[x] = new Array(this.mapHeight);
             this.buildingImages[x] = new Array(this.mapHeight);
             for (let y = this.mapHeight - 1; y >= 0; y--) {
-                let tileCoords = this.getTileWorldCoordinates(x, y);
+                let tileCoords = this.tileCoordinatesToWorldCoordinates(x, y);
                 let tileImage = this.add.image(tileCoords.x, tileCoords.y, 
                     map.getMap()[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
                 this.tileMapImages[x][y] = tileImage;
@@ -107,17 +107,18 @@ export class MapScene extends Phaser.Scene {
     }
 
     handleClick(event) {
-        if (this.currentShopSelection != null && 
-                this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
-            // If highlighting a tile, build the shop selection if enough cash
+        let clickCoords = this.cameras.main.getWorldPoint(event.upX, event.upY);
+        let tile = this.worldCoordinatesToTileCoordinates(clickCoords.x, clickCoords.y);
+        if (this.currentShopSelection && this.areTileCoordinatesValid(tile.x, tile.y) &&
+                map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
+            // Build the shop selection if enough cash
             if (map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, 
-                    this.tileHighlightActiveX, this.tileHighlightActiveY) <= state.getCurrentCash()) {
-                this.placeShopSelection();
+                    tile.x, tile.y) <= state.getCurrentCash()) {
+                this.placeShopSelection(tile.x, tile.y);
             } else {
                 // Print message for not enough cash. Should only happen for demolition,
                 // as other options will not be selectable in the shop when you can't afford them.
-                let worldCoords = this.getTileWorldCoordinates(this.tileHighlightActiveX, this.tileHighlightActiveY);
-                let coords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - blockImageHeight);
+                let coords = this.worldCoordinatesToCanvasCoordinates(clickCoords.x, clickCoords.y - blockImageHeight);
                 this.addTemporaryText("Not enough cash!", negativeCashColor, 24, coords.x, coords.y);
             }
         } else {
@@ -135,41 +136,41 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
-    placeShopSelection() {
-        let x = this.tileHighlightActiveX;
-        let y = this.tileHighlightActiveY;
+    placeShopSelection(x, y) {
         let tileMap = map.getMap();
         const selection = this.currentShopSelection;
-        if (map.canPlaceShopSelection(selection, x, y)) {
-            let price = map.getShopSelectionPrice(this.cache.json, selection, x, y);
-            // Update the tileMap
-            map.addShopSelectionToMap(selection, tileMap, x, y);
+        let price = map.getShopSelectionPrice(this.cache.json, selection, x, y);
+        // Update the tileMap
+        map.addShopSelectionToMap(selection, tileMap, x, y);
 
-            // Update cash per second and click cash
-            state.updateCashRates(this.cache.json, map.getMap());
+        // Update cash per second and click cash
+        state.updateCashRates(this.cache.json, map.getMap());
 
-            // Update displayed sprites
-            if (selection.selectionType == ShopSelectionType.DEMOLITION) {
-                this.buildingImages[x][y].setVisible(false);
-                this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
-                this.tileMapImages[x][y].alpha = 1;
-            } else if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
-                this.tileMapImages[x][y].setTexture(selection.getName());
-                this.tileMapImages[x][y].alpha = 1;
-            } else {
-                this.buildingImages[x][y].setVisible(true);
-                this.buildingImages[x][y].setTexture(selection.getName());
-            }
-            this.tileHighlightActiveX = -1;
-            this.tileHighlightActiveY = -1;
-
-            // Apply cost of placing
-            state.addCurrentCash(-1 * price);
+        // Update displayed sprites
+        if (selection.selectionType == ShopSelectionType.DEMOLITION) {
+            this.buildingImages[x][y].setVisible(false);
+            this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
+            this.tileMapImages[x][y].alpha = 1;
+        } else if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
+            this.tileMapImages[x][y].setTexture(selection.getName());
+            this.tileMapImages[x][y].alpha = 1;
+        } else {
+            this.buildingImages[x][y].setVisible(true);
+            this.buildingImages[x][y].setTexture(selection.getName());
         }
+        // Reset tile alpha to default on previous hovered tile
+        if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
+            this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
+        }
+        this.tileHighlightActiveX = -1;
+        this.tileHighlightActiveY = -1;
+
+        // Apply cost of placing
+        state.addCurrentCash(-1 * price);
     }
 
     updatePreview(x, y, showExistingBuildingRates) {
-        let worldCoords = this.getTileWorldCoordinates(x, y);
+        let worldCoords = this.tileCoordinatesToWorldCoordinates(x, y);
         let previewCoords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - 150);
         this.previewRect.x = previewCoords.x;
         this.previewRect.y = previewCoords.y;
@@ -273,16 +274,10 @@ export class MapScene extends Phaser.Scene {
 
     updateTileHighlight() {
         let worldCoords = this.cameras.main.getWorldPoint(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
-        let xDiff = worldCoords.x - this.mapOriginX;
-        let yDiff = (this.mapOriginY - blockImageHeight / 2 + blockImageWidth / 4) - worldCoords.y;
-        
-        // Determine if point is between lines for x=0, x=1, x=2, etc. Line for x=0: x/2 + y = -(blockImageWidth / 4)
-        // Similar for determining if in between y lines. Line for y=0: -x/2 + y = blockImageWidth / 4
-        let tileX = Math.floor((xDiff + 2 * yDiff) / blockImageWidth - 0.25);
-        let tileY = Math.floor((-xDiff + 2 * yDiff) / blockImageWidth - 0.25);
+        let tile = this.worldCoordinatesToTileCoordinates(worldCoords.x, worldCoords.y);
 
         // If hovered tile hasn't changed and a shop selection is active, just exit
-        if (tileX == this.tileHighlightActiveX && tileY == this.tileHighlightActiveY && this.currentShopSelection) {
+        if (tile.x == this.tileHighlightActiveX && tile.y == this.tileHighlightActiveY && this.currentShopSelection) {
             return;
         }
 
@@ -292,14 +287,14 @@ export class MapScene extends Phaser.Scene {
         }
 
         // Update hover image/tile image, cash preview, and alpha
-        if (this.areTileCoordinatesValid(tileX, tileY) && map.canPlaceShopSelection(this.currentShopSelection, tileX, tileY)) {
-            this.tileHighlightActiveX = tileX;
-            this.tileHighlightActiveY = tileY;
-            let tileCoords = this.getTileWorldCoordinates(tileX, tileY);
+        if (this.areTileCoordinatesValid(tile.x, tile.y) && map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
+            this.tileHighlightActiveX = tile.x;
+            this.tileHighlightActiveY = tile.y;
+            let tileCoords = this.tileCoordinatesToWorldCoordinates(tile.x, tile.y);
             this.hoverImage.x = tileCoords.x;
             this.hoverImage.y = tileCoords.y;
             this.hoverImage.alpha = hoverImageAlpha;
-            this.updatePreview(tileX, tileY, false);
+            this.updatePreview(tile.x, tile.y, false);
             // Demolishing existing building
             if (this.currentShopSelection.selectionType == ShopSelectionType.DEMOLITION) {
                 this.hoverImage.setScale(tileScale / 2);
@@ -310,7 +305,7 @@ export class MapScene extends Phaser.Scene {
                 if (this.currentShopSelection.selectionType == ShopSelectionType.BUILDING_ONLY) {
                     this.hoverImage.y += buildingYDiff;
                 } else {
-                    this.tileMapImages[tileX][tileY].alpha = 0;
+                    this.tileMapImages[tile.x][tile.y].alpha = 0;
                 }
             }
         // Hide preview, or show stats for existing building
@@ -318,15 +313,25 @@ export class MapScene extends Phaser.Scene {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
             this.hoverImage.alpha = 0;
-            if (this.areTileCoordinatesValid(tileX, tileY)) {
-                this.updatePreview(tileX, tileY, true);
+            if (this.areTileCoordinatesValid(tile.x, tile.y)) {
+                this.updatePreview(tile.x, tile.y, true);
             } else {
                 this.hidePreview();
             }
         }
     }
 
-    getTileWorldCoordinates(tileX, tileY) {
+    worldCoordinatesToTileCoordinates(x, y) {
+        let xDiff = x - this.mapOriginX;
+        let yDiff = (this.mapOriginY - blockImageHeight / 2 + blockImageWidth / 4) - y;
+        // Determine if point is between lines for x=0, x=1, x=2, etc. Line for x=0: x/2 + y = -(blockImageWidth / 4)
+        // Similar for determining if in between y lines. Line for y=0: -x/2 + y = blockImageWidth / 4
+        let tileX = Math.floor((xDiff + 2 * yDiff) / blockImageWidth - 0.25);
+        let tileY = Math.floor((-xDiff + 2 * yDiff) / blockImageWidth - 0.25);
+        return new Phaser.Math.Vector2(tileX, tileY);
+    }
+
+    tileCoordinatesToWorldCoordinates(tileX, tileY) {
         let xDiff = (tileX - tileY) * blockImageWidth / 2;
         let yDiff = (tileX + tileY) * -blockImageWidth / 4;
         return new Phaser.Math.Vector2(this.mapOriginX + xDiff, this.mapOriginY + yDiff);
