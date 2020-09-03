@@ -18,6 +18,9 @@ export class LoadingScene extends Phaser.Scene {
         // Load UI elements
         this.load.image('bomb', 'assets/sprites/ui/bomb.png');
         this.load.image('dollarSign', 'assets/sprites/ui/cash_particle.png');
+        for (let i = 1; i <= 9; i++) {
+            this.load.image('cloud' + i, 'assets/sprites/background/cloud' + i + '.png');
+        }
     }
 
     create() {
@@ -48,7 +51,10 @@ export class LoadingScene extends Phaser.Scene {
         
         this.load.start();
         this.load.once('complete', () => {
-            this.scene.start("MapScene").start("UIScene").stop();
+            this.scene.start("BackgroundScene")
+                      .start("MapScene")
+                      .start("UIScene")
+                      .stop();
         });
     }
 }

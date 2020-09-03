@@ -36,19 +36,24 @@ export class MapScene extends Phaser.Scene {
         // UI scene - used for elements which should not scale with game zoom
         this.uiScene = this.game.scene.getScene('UIScene');
 
-        // Background
-        this.cameras.main.setBackgroundColor("#4287f5");
-
         // Blocks
         this.createTileMap();
         state.updateCashRates(this.cache.json, map.getMap());
 
         // Hover image
-        this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale).setOrigin(0.5, 1);
+        this.hoverImage = this.add.image(0, 0, '').setScale(tileScale).setOrigin(0.5, 1);
         this.hoverImage.alpha = 0;
 
         // Cash click particles
-        this.cashParticles = this.uiScene.add.particles('dollarSign');
+        let cashParticles = this.uiScene.add.particles('dollarSign');
+        this.cashEmitter = cashParticles.createEmitter({
+            x: 0,
+            y: 0,
+            speed: 150,
+            gravityY: 250,
+            quantity: 3,
+            frequency: -1
+        });
 
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
@@ -102,7 +107,7 @@ export class MapScene extends Phaser.Scene {
                 this.tileMapImages[x][y] = tileImage;
                 // Add a placeholder building image to be replaced when necessary
                 let buildingImage = this.add.image(tileCoords.x, tileCoords.y + buildingYDiff,
-                    map.getMap()[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
+                    '').setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
             }
@@ -254,16 +259,8 @@ export class MapScene extends Phaser.Scene {
         let clickCash = Math.max(state.getClickCashValue(), 0.01);	
         this.addTemporaryText(formatCash(clickCash),	
             positiveCashColor, 48, event.upX, event.upY);
-        let emitter = this.cashParticles.createEmitter({
-            x: event.upX,
-            y: event.upY,
-            speed: 150,
-            gravityY: 250,
-            quantity: 3,
-            frequency: -1
-        });
-        emitter.explode();
-        emitter.stop();
+        this.cashEmitter.setPosition(event.upX, event.upY);
+        this.cashEmitter.explode();
         state.addCurrentCash(clickCash);
     }
 
