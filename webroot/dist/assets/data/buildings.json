@@ -1,6 +1,7 @@
 {
     "Convenience Store": {
         "name": "Convenience Store",
+        "shortName": "C-Store",
         "tileName": "Concrete",
         "description": "-1 growth rate for each adjacent convenience store",
         "sprite": "buildingTiles_004.png",

@@ -1,5 +1,6 @@
 Buildings
 - name: name of the building
+- shortName: short name of the building used in some UI elements
 - tileName: name of the tile that gets placed along with the building, if there is one
 - description: description displayed in shop tooltip
 - sprite: image file name for the building, in assets/sprites/buildings/

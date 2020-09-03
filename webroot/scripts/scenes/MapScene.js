@@ -187,7 +187,9 @@ export class MapScene extends Phaser.Scene {
             let cashGrowthRate;
             let clickValue;
             if (map.getMap()[x][y].building) {
-                name = map.getMap()[x][y].building;
+                let buildingName = map.getMap()[x][y].building;
+                let shortName = this.cache.json.get('buildings')[buildingName]['shortName'];
+                name = shortName ? shortName : buildingName;
                 cashGrowthRate = build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), map.getMap(), x, y);
                 clickValue = build.getBuildingClickValue(this.cache.json.get('buildings'), map.getMap(), x, y);
             } else {
