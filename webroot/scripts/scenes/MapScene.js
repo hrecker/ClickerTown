@@ -47,6 +47,9 @@ export class MapScene extends Phaser.Scene {
         this.hoverImage = this.add.image(0, 0, 'yellow').setScale(tileScale).setOrigin(0.5, 1);
         this.hoverImage.alpha = 0;
 
+        // Cash click particles
+        this.cashParticles = this.uiScene.add.particles('dollarSign');
+
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
         
@@ -251,6 +254,16 @@ export class MapScene extends Phaser.Scene {
         let clickCash = Math.max(state.getClickCashValue(), 0.01);	
         this.addTemporaryText(formatCash(clickCash),	
             positiveCashColor, 48, event.upX, event.upY);
+        let emitter = this.cashParticles.createEmitter({
+            x: event.upX,
+            y: event.upY,
+            speed: 150,
+            gravityY: 250,
+            quantity: 3,
+            frequency: -1
+        });
+        emitter.explode();
+        emitter.stop();
         state.addCurrentCash(clickCash);
     }
 
