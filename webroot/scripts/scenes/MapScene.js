@@ -2,7 +2,7 @@ import * as state from '../state/CashState';
 import * as map from '../state/MapState';
 import * as build from '../model/Building';
 import * as tile from '../model/Tile';
-import { ShopSelectionType, addShopSelectionListener } from '../state/UIState';
+import { ShopSelectionType, addShopSelectionListener, isInDialog } from '../state/UIState';
 import { addGameResetListener } from '../state/GameState';
 import { formatCash } from '../util/Util';
 
@@ -90,8 +90,8 @@ export class MapScene extends Phaser.Scene {
         this.previewTextGrowthRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
         this.previewTextClickRate = this.uiScene.add.text(0, 0, "", previewTextStyle);
         this.previewTextClickRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.hidePreview();
-        
+        this.preview = this.add.group([this.previewRect, this.previewTextCost, this.previewTextGrowthRate, this.previewTextClickRate]);
+        this.preview.setVisible(false);
     }
 
     // If the game is reset, will need to update all displayed sprites appropriately
@@ -144,6 +144,10 @@ export class MapScene extends Phaser.Scene {
     }
 
     handleClick(event) {
+        if (isInDialog()) {
+            return;
+        }
+
         let clickCoords = this.cameras.main.getWorldPoint(event.upX, event.upY);
         let tile = this.worldCoordinatesToTileCoordinates(clickCoords.x, clickCoords.y);
         if (this.currentShopSelection && this.areTileCoordinatesValid(tile.x, tile.y) &&
@@ -257,10 +261,7 @@ export class MapScene extends Phaser.Scene {
             this.updatePreviewText(this.previewTextClickRate, rateDiffs.clickValue, "/c");
         }
 
-        this.previewRect.setVisible(true);
-        this.previewTextCost.setVisible(true);
-        this.previewTextGrowthRate.setVisible(true);
-        this.previewTextClickRate.setVisible(true);
+        this.preview.setVisible(true);
     }
 
     updatePreviewText(text, cashValue, suffix) {
@@ -274,13 +275,6 @@ export class MapScene extends Phaser.Scene {
             text.setColor("#000000");
         }
         text.setText(prefix + formatCash(cashValue) + suffix);
-    }
-
-    hidePreview() {
-        this.previewRect.setVisible(false);
-        this.previewTextCost.setVisible(false);
-        this.previewTextGrowthRate.setVisible(false);
-        this.previewTextClickRate.setVisible(false);
     }
 
     addClickCash(event) {
@@ -357,7 +351,7 @@ export class MapScene extends Phaser.Scene {
             if (this.areTileCoordinatesValid(tile.x, tile.y)) {
                 this.updatePreview(tile.x, tile.y, true);
             } else {
-                this.hidePreview();
+                this.preview.setVisible(false);
             }
         }
     }
@@ -396,6 +390,9 @@ export class MapScene extends Phaser.Scene {
 
     // Update highlighted tile
     update(time, delta) {
+        if (isInDialog()) {
+            return;
+        }
         this.updateTileHighlight();
         this.controls.update(delta);
     }

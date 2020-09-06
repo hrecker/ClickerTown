@@ -26,6 +26,10 @@ export class LoadingScene extends Phaser.Scene {
         this.load.image('resetButtonDown', 'assets/sprites/ui/reset_button_down.png');
         this.load.image('saveButton', 'assets/sprites/ui/save_button.png');
         this.load.image('saveButtonDown', 'assets/sprites/ui/save_button_down.png');
+        this.load.image('confirmButton', 'assets/sprites/ui/confirm_button.png');
+        this.load.image('confirmButtonDown', 'assets/sprites/ui/confirm_button_down.png');
+        this.load.image('cancelButton', 'assets/sprites/ui/cancel_button.png');
+        this.load.image('cancelButtonDown', 'assets/sprites/ui/cancel_button_down.png');
     }
 
     create() {
