@@ -54,7 +54,11 @@ export class MapScene extends Phaser.Scene {
             speed: 150,
             gravityY: 250,
             quantity: 3,
-            frequency: -1
+            frequency: -1,
+            rotate: { min: 0, max: 360 }
+        });
+        this.cashEmitter.setAlpha(function (p, k, t) {
+            return 1 - t;
         });
 
         // Click handler
@@ -160,7 +164,7 @@ export class MapScene extends Phaser.Scene {
                 // Print message for not enough cash. Should only happen for demolition,
                 // as other options will not be selectable in the shop when you can't afford them.
                 let coords = this.worldCoordinatesToCanvasCoordinates(clickCoords.x, clickCoords.y - blockImageHeight);
-                this.addTemporaryText("Not enough cash!", negativeCashColor, 24, coords.x, coords.y);
+                this.addTemporaryText("Not enough cash!", "#000", 24, coords.x, coords.y);
             }
         } else {
             // Otherwise add cash
@@ -281,14 +285,18 @@ export class MapScene extends Phaser.Scene {
         // Always give at least one cent per click, just to be merciful
         let clickCash = Math.max(state.getClickCashValue(), 0.01);	
         this.addTemporaryText(formatCash(clickCash),	
-            positiveCashColor, 48, event.upX, event.upY);
+            "#ffffff", 48, event.upX, event.upY);
         this.cashEmitter.setPosition(event.upX, event.upY);
         this.cashEmitter.explode();
         state.addCurrentCash(clickCash);
     }
 
     addTemporaryText(text, color, fontSize, x, y) {
-        let textStyle = { font: fontSize + "px Verdana", fill: color };
+        let textStyle = {  
+            fontFamily: 'Verdana',
+            fontSize: fontSize + "px",
+            color: color
+        };
         let textObject = this.uiScene.add.text(x, y, text, textStyle);
         textObject.setOrigin(0.5, 0.5);
         // Add text animation
@@ -301,6 +309,7 @@ export class MapScene extends Phaser.Scene {
                 getStart: () => textObject.y,
                 getEnd: () => textObject.y - 50
             },
+            alpha: 0,
             onComplete: () => {
                 textObject.destroy();
             }

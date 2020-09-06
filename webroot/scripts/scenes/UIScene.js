@@ -22,14 +22,31 @@ export class UIScene extends Phaser.Scene {
     }
 
     create() {
-        // UI
-        let titleTextStyle = { font: "bold 32px Verdana", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
-        let subtitleTextStyle = { font: "bold 24px Verdana", fill: "#15b800", boundsAlignH: "center", boundsAlignV: "middle" };
-        let shopTextStyle = { font: "bold 30px Arial", boundsAlignH: "center", boundsAlignV: "middle" };
-        let tooltipTextStyle = { font: "14px Courier", fill: "#000000", align: "left", wordWrap: { width: (tooltipWidth - 2 * tooltipTextMargin), useAdvancedWrap: true } }
-        let priceTextStyle = { font: "bold 10px Verdana", fill: "#000000", align: "center" };
-        let statusTextStyle = { font: "bold 32px Arial", fill: "#000000", boundsAlignH: "center", boundsAlignV: "middle" };
-        let buttonTitleStyle = { font: "bold 16px Arial", fill: "#000000", boundsAlignH: "center", boundsAlignV: "middle" };
+        // Text styles
+        let titleTextStyle = { 
+            font: "bold 48px Verdana",
+            shadow: {
+                offsetX: 1,
+                offsetY: 1,
+                color: '#000',
+                blur: 4,
+                stroke: true,
+                fill: true
+            }};
+        let subtitleTextStyle = JSON.parse(JSON.stringify(titleTextStyle));
+        subtitleTextStyle.font = "32px Verdana";
+        subtitleTextStyle.shadow.blur = 3;
+        let tooltipTextStyle = { 
+            font: "14px Courier",
+            fill: "#000000",
+            wordWrap: { 
+                width: (tooltipWidth - 2 * tooltipTextMargin),
+                useAdvancedWrap: true
+            }
+        };
+        let buttonTitleStyle = { 
+            font: "bold 16px Verdana"
+        };
 
         // Save and reset buttons and button tooltip
         this.buttonTooltipRect = this.add.rectangle(30, 65, tooltipWidth, buttonTooltipHeight, tooltipColor);
@@ -46,18 +63,16 @@ export class UIScene extends Phaser.Scene {
         this.configureButton("saveButton", true, 60, 65);
 
         // Status message text
-        this.statusMessage = this.add.text(5, this.game.renderer.height - 5, "", statusTextStyle);
+        this.statusMessage = this.add.text(5, this.game.renderer.height - 5, "", subtitleTextStyle);
         this.statusMessage.setOrigin(0, 1);
         this.statusMessage.alpha = 0;
 
         // Cash UI
-        this.add.rectangle(this.game.renderer.width / 2, 25, 350, 50, 0x404040);
-        this.add.rectangle(this.game.renderer.width / 2, 65, 200, 30, 0x000000);
         this.currentCashText = this.add.text(this.game.renderer.width / 2, 25,
             formatCash(state.getCurrentCash()), titleTextStyle);
         this.currentCashText.setOrigin(0.5);
-        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 65, 
-            formatCash(state.getCashGrowthRate()), subtitleTextStyle);
+        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 70, 
+            formatCash(state.getCashGrowthRate()) + "/second", subtitleTextStyle);
         this.cashGrowthRateText.setOrigin(0.5);
 
         // Listeners
@@ -77,7 +92,7 @@ export class UIScene extends Phaser.Scene {
                 this.clearShopSelection();
             }
         });
-        this.add.text(this.game.renderer.width - 115, 9, "Shop", shopTextStyle);
+        this.add.text(this.game.renderer.width - 115, 9, "Shop", { font: "bold 30px Arial" });
 
         // Shop selections
         this.shopItems = [];
@@ -103,7 +118,8 @@ export class UIScene extends Phaser.Scene {
             this.shopItems[i].selectionBox.on("pointerout", () => { this.tooltip.setVisible(false); });
             if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
                 let priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 
-                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json)), priceTextStyle);
+                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json)),
+                    { font: "bold 10px Verdana", fill: "#000000", align: "center" });
                 priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
             }
         }
@@ -126,12 +142,12 @@ export class UIScene extends Phaser.Scene {
         this.tooltip.setVisible(false);
 
         // Reset confirmation popup
-        this.confirmationRect = this.add.rectangle(this.game.renderer.width / 2, this.game.renderer.height / 2 - 20, 410, 150, tooltipColor);
+        this.confirmationRect = this.add.rectangle(this.game.renderer.width / 2, this.game.renderer.height / 2 - 20, 500, 150, 0x404040);
         this.confirmationTextLine1 = this.add.text(this.game.renderer.width / 2, this.game.renderer.height / 2 - 90, 
-            "Reset game?", statusTextStyle);
+            "Reset game?", subtitleTextStyle);
         this.confirmationTextLine1.setOrigin(0.5, 0);
         this.confirmationTextLine2 = this.add.text(this.game.renderer.width / 2, this.game.renderer.height / 2 - 50, 
-            "You will lose all progress.", statusTextStyle);
+            "You will lose all progress.", subtitleTextStyle);
         this.confirmationTextLine2.setOrigin(0.5, 0);
         this.confirmButton = this.add.image(this.game.renderer.width / 2 + 50, this.game.renderer.height / 2 + 25, 'confirmButton');
         this.confirmButton.setScale(0.75);
@@ -352,7 +368,7 @@ export class UIScene extends Phaser.Scene {
     }
 
     cashGrowthListener(cashGrowth, scene) {
-        scene.cashGrowthRateText.setText(formatCash(cashGrowth));
+        scene.cashGrowthRateText.setText(formatCash(cashGrowth) + "/second");
     }
 
     addCashPerSecond(seconds) {
