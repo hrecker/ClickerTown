@@ -3,6 +3,7 @@ import * as map from '../state/MapState';
 import * as build from '../model/Building';
 import * as tile from '../model/Tile';
 import { ShopSelectionType, addShopSelectionListener } from '../state/UIState';
+import { addGameResetListener } from '../state/GameState';
 import { formatCash } from '../util/Util';
 
 const tileScale = 1;
@@ -38,6 +39,7 @@ export class MapScene extends Phaser.Scene {
 
         // Blocks
         this.createTileMap();
+        this.syncTileMap();
         state.updateCashRates(this.cache.json, map.getMap());
 
         // Hover image
@@ -58,8 +60,9 @@ export class MapScene extends Phaser.Scene {
         // Click handler
         this.input.on("pointerup", this.handleClick, this);
         
-        // Shop selection listener
+        // Listeners
         addShopSelectionListener(this.shopSelectionListener, this);
+        addGameResetListener(this.gameResetListener, this);
 
         // Camera control
         var controlConfig = {
@@ -91,6 +94,11 @@ export class MapScene extends Phaser.Scene {
         
     }
 
+    // If the game is reset, will need to update all displayed sprites appropriately
+    gameResetListener(scene) {
+        scene.syncTileMap();
+    }
+
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
     // X increases diagonally up and to the right. Y increases diagonally up and to the left.
     createTileMap() {
@@ -110,6 +118,27 @@ export class MapScene extends Phaser.Scene {
                     '').setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
+            }
+        }
+    }
+
+    // Update displayed sprites to reflect the actual contents of the current tile map
+    syncTileMap() {
+        for (let x = this.mapWidth - 1; x >= 0; x--) {
+            for (let y = this.mapHeight - 1; y >= 0; y--) {
+                let building = map.getMap()[x][y].building;
+                if (building && ShopSelectionType[this.cache.json.get('buildings')[building]['shopSelectionType']] == 
+                        ShopSelectionType.TILE_AND_BUILDING) {
+                    this.tileMapImages[x][y].setTexture(building);
+                } else {
+                    this.tileMapImages[x][y].setTexture(map.getMap()[x][y].tile);
+                    if (building) {
+                        this.buildingImages[x][y].setTexture(building);
+                        this.buildingImages[x][y].setVisible(true);
+                    } else {
+                        this.buildingImages[x][y].setVisible(false);
+                    }
+                }
             }
         }
     }

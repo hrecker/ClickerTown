@@ -1,5 +1,6 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
+import { initializeGame } from '../state/GameState';
 
 // Load json and assets
 export class LoadingScene extends Phaser.Scene {
@@ -21,13 +22,14 @@ export class LoadingScene extends Phaser.Scene {
         for (let i = 1; i <= 9; i++) {
             this.load.image('cloud' + i, 'assets/sprites/background/cloud' + i + '.png');
         }
+        this.load.image('resetButton', 'assets/sprites/ui/reset_button.png');
+        this.load.image('resetButtonDown', 'assets/sprites/ui/reset_button_down.png');
+        this.load.image('saveButton', 'assets/sprites/ui/save_button.png');
+        this.load.image('saveButtonDown', 'assets/sprites/ui/save_button_down.png');
     }
 
     create() {
         // Set various initial values from json
-        state.setCurrentCash(this.cache.json.get('initials')['startingCash']);
-        state.setCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
-        state.setClickCashValue(this.cache.json.get('initials')['startingClickValue']);
         state.setStartingCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
         state.setStartingClickValue(this.cache.json.get('initials')['startingClickValue']);
         map.setDemolitionCostFraction(this.cache.json.get('initials')['demolishFraction']);
@@ -44,10 +46,8 @@ export class LoadingScene extends Phaser.Scene {
             let tile = this.cache.json.get('tiles')[tileName];
             this.load.image(tileName, 'assets/sprites/tiles/' + tile['sprite']);
         }
-        
-        // Initialize tile map
-        map.initializeMap(this.cache.json.get('tiles'),
-            this.cache.json.get('initials')['mapWidth'], this.cache.json.get('initials')['mapHeight']);
+
+        initializeGame(this.cache.json, false);
         
         this.load.start();
         this.load.once('complete', () => {

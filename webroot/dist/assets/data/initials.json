@@ -2,7 +2,7 @@
     "startingCash": 50,
     "startingGrowthRate": 1,
     "startingClickValue": 1,
-    "mapWidth": 8,
-    "mapHeight": 8,
+    "mapWidth": 6,
+    "mapHeight": 6,
     "demolishFraction": 0.5
 }

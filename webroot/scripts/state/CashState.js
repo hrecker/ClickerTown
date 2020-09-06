@@ -61,19 +61,26 @@ export function getCurrentCash() {
     return decicentsToDollars(currentCashDecicents);
 }
 
+export function getCurrentCashDecicents() {
+    return currentCashDecicents;
+}
+
+export function setCurrentCashDecicents(cashDecicents) {
+    if (cashDecicents == currentCashDecicents) {
+        return;
+    }
+    currentCashDecicents = cashDecicents;
+    currentCashCallbacks.forEach(callback => 
+        callback.callback(getCurrentCash(), callback.scene));
+}
+
 export function addCurrentCash(cash) {
     setCurrentCash(cash + getCurrentCash());
 }
 
 export function setCurrentCash(cash) {
     let cashDecicents = dollarsToDecicents(cash);
-    if (cashDecicents == currentCashDecicents) {
-        return;
-    }
-
-    currentCashDecicents = cashDecicents;
-    currentCashCallbacks.forEach(callback => 
-        callback.callback(getCurrentCash(), callback.scene));
+    setCurrentCashDecicents(cashDecicents);
 }
 
 export function addCurrentCashListener(callback, scene) {

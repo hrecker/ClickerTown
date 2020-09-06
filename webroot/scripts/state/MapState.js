@@ -1,4 +1,3 @@
-import { getRandomInt } from '../util/Util';
 import { ShopSelectionType } from '../state/UIState';
 
 // Map is a 2D array of objects containing up to two properties	
@@ -11,21 +10,22 @@ export function setDemolitionCostFraction(costFraction) {
     demolitionCostFraction = costFraction;
 }
 
-export function initializeMap(tilesJson, width, height) {
-    let startingTileNames = Object.keys(tilesJson).
-        filter(tile => tilesJson[tile]['startingTile']);
+export function initializeMap(width, height) {
     map = new Array(width);
     for (let x = 0; x < width; x++) {
         map[x] = new Array(height);
         for (let y = 0; y < height; y++) {
-            let tileName = startingTileNames[getRandomInt(0, startingTileNames.length)];
             map[x][y] = { 
-                "tile": tileName,
+                "tile": 'Dirt',
                 "building": null
             };
         }
     }
     return map;
+}
+
+export function setMap(newMap) {
+    map = newMap;
 }
 
 export function getMap() {
