@@ -61,8 +61,9 @@ export class UIScene extends Phaser.Scene {
         state.addCashGrowthListener(this.cashGrowthListener, this);
         addGameResetListener(this.gameResetListener, this);
 
-        // Cash growth timer
+        // Timers
         this.lastCashGrowth = -1;
+        this.lastSave = -1;
 
         // Shop selection UI
         let shopSelectionBox = this.add.rectangle(this.game.renderer.width - 75, this.game.renderer.height / 2, 150, this.game.renderer.height, 0x404040);
@@ -250,13 +251,20 @@ export class UIScene extends Phaser.Scene {
         this.buttonTooltipText.setVisible(false);
     }
 
+    save() {
+        saveGame();
+        this.lastSave = Date.now();
+        this.showStatusMessage("Game saved!");
+    }
+
     handleButtonClick(buttonName) {
         switch (buttonName) {
             case "saveButton":
-                saveGame();
-                this.showStatusMessage("Game saved!");
+                this.save();
                 break;
             case "resetButton":
+                // Reset last save time to give a chance to refresh after a reset
+                this.lastSave = Date.now();
                 resetGame(this.cache.json);
                 this.showStatusMessage("Game reset");
                 break;
@@ -272,7 +280,7 @@ export class UIScene extends Phaser.Scene {
             targets: this.statusMessage,
             alpha: 1,
             ease: 'Linear',
-            duration: 100,
+            duration: 200,
             repeat: 0,
             yoyo: false
         });
@@ -307,19 +315,28 @@ export class UIScene extends Phaser.Scene {
         state.addCurrentCash(seconds * state.getCashGrowthRate());
     }
 
-    // Add cash every tenth of a second
     update() {
         let now = Date.now();
         if (this.lastCashGrowth === -1) {
             this.lastCashGrowth = now;
         }
+        if (this.lastSave === -1) {
+            this.lastSave = now;
+        }
         
-        let timePassed = now - this.lastCashGrowth;
-        if (timePassed >= 100) {
-            let decisecondsPassed = Math.floor(timePassed / 100);
+        // Add cash every tenth of a second
+        let cashGrowthTimePassed = now - this.lastCashGrowth;
+        if (cashGrowthTimePassed >= 100) {
+            let decisecondsPassed = Math.floor(cashGrowthTimePassed / 100);
             this.addCashPerSecond(decisecondsPassed / 10.0);
-            let timeRemainder = timePassed - (decisecondsPassed * 100);
+            let timeRemainder = cashGrowthTimePassed - (decisecondsPassed * 100);
             this.lastCashGrowth = now - timeRemainder;
+        }
+
+        // Autosave every minute
+        let autoSaveTimePassed = now - this.lastSave;
+        if (autoSaveTimePassed >= 60000) {
+            this.save();
         }
     }
 }
