@@ -8,7 +8,7 @@ import { UIScene } from "./scenes/UIScene";
 var config = {
     type: Phaser.AUTO,
     width: 1000,
-    height: 750,
+    height: 740,
     physics: {
         default: 'arcade'
     },

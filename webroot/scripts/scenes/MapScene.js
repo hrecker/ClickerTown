@@ -69,6 +69,9 @@ export class MapScene extends Phaser.Scene {
         addGameResetListener(this.gameResetListener, this);
 
         // Camera control
+        let originalX = this.cameras.main.centerX;
+        this.cameras.main.centerOnX(this.mapOriginX);
+        this.cameras.main.setPosition(this.mapOriginX - originalX, 0);
         var controlConfig = {
             camera: this.cameras.main,
             left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
