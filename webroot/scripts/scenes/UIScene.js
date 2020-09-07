@@ -11,7 +11,6 @@ const selectionBoxSize = 143 * imageScale;
 const tooltipWidth = 250;
 const tooltipHeight = 150;
 const tooltipTextMargin = 5;
-const buttonTooltipHeight = 28;
 const tooltipColor = 0xfffbf0;
 
 export class UIScene extends Phaser.Scene {
@@ -48,19 +47,14 @@ export class UIScene extends Phaser.Scene {
             font: "bold 16px Verdana"
         };
 
-        // Save and reset buttons and button tooltip
-        this.buttonTooltipRect = this.add.rectangle(30, 65, tooltipWidth, buttonTooltipHeight, tooltipColor);
-        this.buttonTooltipRect.setOrigin(0, 0);
-        this.buttonTooltipText = this.add.text(0, 0, "", tooltipTextStyle);
-        this.buttonTooltip = this.add.group([this.buttonTooltipRect, this.buttonTooltipText]);
-        this.buttonTooltip.setVisible(false);
+        // Save and reset buttons
         this.selectedButton = null;
         this.resetButton = this.add.image(5, 5, 'resetButton');
         this.resetButton.setOrigin(0, 0);
-        this.configureButton("resetButton", true, 5, 65);
+        this.configureButton("resetButton");
         this.saveButton = this.add.image(60, 5, 'saveButton');
         this.saveButton.setOrigin(0, 0);
-        this.configureButton("saveButton", true, 60, 65);
+        this.configureButton("saveButton");
 
         // Status message text
         this.statusMessage = this.add.text(5, this.game.renderer.height - 5, "", subtitleTextStyle);
@@ -68,10 +62,10 @@ export class UIScene extends Phaser.Scene {
         this.statusMessage.alpha = 0;
 
         // Cash UI
-        this.currentCashText = this.add.text(this.game.renderer.width / 2, 25,
+        this.currentCashText = this.add.text(this.game.renderer.width / 2 - 50, 25,
             formatCash(state.getCurrentCash()), titleTextStyle);
         this.currentCashText.setOrigin(0.5);
-        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2, 70, 
+        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2 - 50, 70, 
             formatCash(state.getCashGrowthRate()) + "/second", subtitleTextStyle);
         this.cashGrowthRateText.setOrigin(0.5);
 
@@ -151,14 +145,14 @@ export class UIScene extends Phaser.Scene {
         this.confirmationTextLine2.setOrigin(0.5, 0);
         this.confirmButton = this.add.image(this.game.renderer.width / 2 + 50, this.game.renderer.height / 2 + 25, 'confirmButton');
         this.confirmButton.setScale(0.75);
-        this.configureButton("confirmButton", false);
+        this.configureButton("confirmButton");
         this.confirmText = this.add.text(this.confirmButton.getTopCenter().x, this.confirmButton.getTopCenter().y - 2, "Reset", buttonTitleStyle);
         this.confirmText.setOrigin(0.5, 1);
         this.cancelButton = this.add.image(this.game.renderer.width / 2 - 50, this.game.renderer.height / 2 + 25, 'cancelButton');
         this.cancelButton.setScale(0.75);
         this.cancelText = this.add.text(this.cancelButton.getTopCenter().x, this.cancelButton.getTopCenter().y - 2, "Cancel", buttonTitleStyle);
         this.cancelText.setOrigin(0.5, 1);
-        this.configureButton("cancelButton", false);
+        this.configureButton("cancelButton");
         this.confirmationPopup = this.add.group([
             this.confirmationRect,
             this.confirmationTextLine1, 
@@ -257,15 +251,9 @@ export class UIScene extends Phaser.Scene {
         return text;
     }
 
-    configureButton(buttonName, createTooltip, tooltipX, tooltipY) {
+    configureButton(buttonName) {
         this[buttonName].setInteractive();
-        if (createTooltip) {
-            this[buttonName].on('pointerover', () => { this.setButtonTooltip(buttonName, tooltipX, tooltipY); });
-        }
         this[buttonName].on('pointerout', () => {
-            if (createTooltip) {
-                this.buttonTooltip.setVisible(false);
-            }
             this[buttonName].setTexture(buttonName); 
             this.selectedButton = null;
         });
@@ -280,25 +268,6 @@ export class UIScene extends Phaser.Scene {
             }
             this.selectedButton = null;
         });
-    }
-
-    setButtonTooltip(buttonName, x, y) {
-        this.buttonTooltipRect.x = x;
-        this.buttonTooltipRect.y = y;
-        this.buttonTooltipText.x = this.buttonTooltipRect.getTopLeft().x + tooltipTextMargin;
-        this.buttonTooltipText.y = this.buttonTooltipRect.getTopLeft().y + tooltipTextMargin;
-        this.buttonTooltip.setVisible(true);
-        let text = "Invalid button name";
-        switch (buttonName) {
-            case "resetButton":
-                text = "Reset all game progress";
-                break;
-            case "saveButton":
-                text = "Save your progress";
-                break;
-        }
-        this.buttonTooltipText.setText(text);
-        this.buttonTooltipRect.setDisplaySize(text.length * 8.5 + 2 * tooltipTextMargin, buttonTooltipHeight);
     }
 
     save() {

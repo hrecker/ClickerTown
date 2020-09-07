@@ -28,7 +28,7 @@ export class MapScene extends Phaser.Scene {
         this.mapWidth = map.getMap().length;
         this.mapHeight = map.getMap()[0].length;
 
-        this.mapOriginX = this.game.renderer.width / 2 - 75;
+        this.mapOriginX = this.game.renderer.width / 2 - 50;
         this.mapOriginY = (this.game.renderer.height / 2) + (this.mapHeight * blockImageHeight / 3);
         
         this.tileHighlightActiveX = -1;
