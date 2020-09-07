@@ -31,6 +31,7 @@ export class LoadingScene extends Phaser.Scene {
         this.load.image('cancelButton', 'assets/sprites/ui/cancel_button.png');
         this.load.image('cancelButtonDown', 'assets/sprites/ui/cancel_button_down.png');
         this.load.image('promptPanel', 'assets/sprites/ui/prompt_panel.png');
+        this.load.image('previewPanel', 'assets/sprites/ui/building_preview_panel.png');
     }
 
     create() {

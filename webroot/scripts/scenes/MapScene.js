@@ -11,8 +11,8 @@ const blockImageHeight = 100 * tileScale;
 const blockImageWidth = 132 * tileScale;
 const buildingYDiff = 0.325 * -blockImageWidth;
 const hoverImageAlpha = 0.65;
-const previewWidth = 180;
-const previewHeight = 110;
+const previewWidth = 200;
+const previewHeight = 125;
 const previewTextMargin = 7;
 const positiveCashColor = "#15b800";
 const negativeCashColor = "#f54242";
@@ -86,24 +86,9 @@ export class MapScene extends Phaser.Scene {
         };
         this.controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
 
-        // Cash rate preview for new buildings, and info on existing buildings
-        let previewTextStyle = { font: "24px Courier", align: "center", fill: "black" };
-        let previewRect = this.uiScene.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0).setOrigin(0.5, 1).setAlpha(0.6);
-        this.previewTextCost = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
-            previewRect.getTopLeft().y + previewTextMargin,
-            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.previewTextGrowthRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
-            previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3,
-            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.previewTextClickRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
-            previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3,
-            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.preview = this.add.container(0, 0, [
-            previewRect,
-            this.previewTextCost,
-            this.previewTextGrowthRate,
-            this.previewTextClickRate]);
-        this.preview.setVisible(false);
+        // Cash rate preview for new buildings, and info on existing buildings/tiles
+        this.tilePreview = this.createPreview('tilePreview');
+        this.buildingPreview = this.createPreview('buildingPreview');
     }
 
     // If the game is reset, will need to update all displayed sprites appropriately
@@ -222,34 +207,61 @@ export class MapScene extends Phaser.Scene {
         state.addCurrentCash(-1 * price);
     }
 
+    // Create the popup preview used to show building and tile status
+    createPreview(previewName) {
+        let previewTextStyle = { font: "22px Verdana", align: "center" };
+        let previewRect = this.uiScene.add.image(0, 0, 'previewPanel').setOrigin(0.5, 1).setAlpha(0.65);
+        this[previewName + 'Title'] = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+            previewRect.getTopLeft().y + previewTextMargin,
+            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
+        this[previewName + 'GrowthRate'] = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+            previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3,
+            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
+        this[previewName + 'ClickRate'] = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+            previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3,
+            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
+        let preview = this.uiScene.add.container(0, 0, [
+            previewRect,
+            this[previewName + 'Title'],
+            this[previewName + 'GrowthRate'],
+            this[previewName + 'ClickRate']]);
+        preview.setVisible(false);
+        return preview;
+    }
+
+    // Update building and tile preview values
     updatePreview(x, y, showExistingBuildingRates) {
         let worldCoords = this.tileCoordinatesToWorldCoordinates(x, y);
         let previewCoords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - 150);
-        this.preview.setPosition(previewCoords.x, previewCoords.y);
+        if (showExistingBuildingRates && map.getMap()[x][y].building) {
+            // Show previews side-by-side when there is a building and a tile present
+            this.tilePreview.setPosition(previewCoords.x - previewWidth / 2 - 1, previewCoords.y);
+            this.buildingPreview.setPosition(previewCoords.x + previewWidth / 2 + 1, previewCoords.y);
+            this.buildingPreview.setVisible(true);
+        } else {
+            this.tilePreview.setPosition(previewCoords.x, previewCoords.y);
+            this.buildingPreview.setVisible(false);
+        }
+        this.tilePreview.setVisible(true);
 
         // Show rates for whatever already exists on the tile
         if (showExistingBuildingRates) {
-            let name;
-            let cashGrowthRate;
-            let clickValue;
             if (map.getMap()[x][y].building) {
                 let buildingName = map.getMap()[x][y].building;
                 let shortName = this.cache.json.get('buildings')[buildingName]['shortName'];
-                name = shortName ? shortName : buildingName;
-                cashGrowthRate = build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), map.getMap(), x, y);
-                clickValue = build.getBuildingClickValue(this.cache.json.get('buildings'), map.getMap(), x, y);
-            } else {
-                name = map.getMap()[x][y].tile;
-                cashGrowthRate = tile.getTileCashGrowthRate(this.cache.json.get('tiles'), map.getMap(), x, y);
-                clickValue = tile.getTileClickValue(this.cache.json.get('tiles'), map.getMap(), x, y);
+                buildingName = shortName ? shortName : buildingName;
+                // Building values
+                this.updatePreviewTexts('buildingPreview',
+                    buildingName,
+                    build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), map.getMap(), x, y),
+                    build.getBuildingClickValue(this.cache.json.get('buildings'), map.getMap(), x, y));
             }
-
-            // Update preview rate text
-            this.previewTextCost.setText(name);
-            this.previewTextCost.setColor("#000000");
-            this.updatePreviewText(this.previewTextGrowthRate, cashGrowthRate, "/s");
-            this.updatePreviewText(this.previewTextClickRate, clickValue, "/c");
-        // Showing shop selection rates
+            // Tile values
+            this.updatePreviewTexts('tilePreview',
+                map.getMap()[x][y].tile,
+                tile.getTileCashGrowthRate(this.cache.json.get('tiles'), map.getMap(), x, y),
+                tile.getTileClickValue(this.cache.json.get('tiles'), map.getMap(), x, y));
+        // Showing shop selection rates preview
         } else {
             let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
             map.addShopSelectionToMap(this.currentShopSelection, mapCopy, x, y);
@@ -258,28 +270,40 @@ export class MapScene extends Phaser.Scene {
                 cashGrowthRate: rates['cashGrowthRate'] - state.getCashGrowthRate(),
                 clickValue: rates['clickValue'] - state.getClickCashValue()
             }
-
-            // Update preview rate text
-            this.updatePreviewText(this.previewTextCost, -1 * map.getShopSelectionPrice(this.cache.json,
-                this.currentShopSelection, this.tileHighlightActiveX, this.tileHighlightActiveY), "");
-            this.updatePreviewText(this.previewTextGrowthRate, rateDiffs.cashGrowthRate, "/s");
-            this.updatePreviewText(this.previewTextClickRate, rateDiffs.clickValue, "/c");
+            // Preview difference in rates that would result after shop selection is placed
+            this.updatePreviewTexts('tilePreview',
+                -1 * map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, this.tileHighlightActiveX, this.tileHighlightActiveY), 
+                rateDiffs.cashGrowthRate,
+                rateDiffs.clickValue);
         }
-
-        this.preview.setVisible(true);
     }
 
-    updatePreviewText(text, cashValue, suffix) {
-        let prefix = "";
-        if (cashValue > 0.001) {
-            prefix += "+";
-            text.setColor(positiveCashColor);
-        } else if (cashValue < -0.001) {
-            text.setColor(negativeCashColor);
-        } else {
+    // Update each text value for the specified preview popup
+    updatePreviewTexts(previewName, title, growthRate, clickRate) {
+        this.updatePreviewText(this[previewName + 'Title'], title, "");
+        this.updatePreviewText(this[previewName + 'GrowthRate'], growthRate, "/s");
+        this.updatePreviewText(this[previewName + 'ClickRate'], clickRate, "/c");
+    }
+
+    // Update one text value in a preview popup
+    updatePreviewText(text, value, suffix) {
+        // Print as-is if the value isn't a number
+        if (isNaN(value)) {
             text.setColor("#000000");
+            text.setText(value);
+        } else {
+            // Highlight numeric values based on positive/negative
+            let prefix = "";
+            if (value > 0.001) {
+                prefix += "+";
+                text.setColor(positiveCashColor);
+            } else if (value < -0.001) {
+                text.setColor(negativeCashColor);
+            } else {
+                text.setColor("#000000");
+            }
+            text.setText(prefix + formatCash(value) + suffix);
         }
-        text.setText(prefix + formatCash(cashValue) + suffix);
     }
 
     addClickCash(event) {
@@ -361,7 +385,8 @@ export class MapScene extends Phaser.Scene {
             if (this.areTileCoordinatesValid(tile.x, tile.y)) {
                 this.updatePreview(tile.x, tile.y, true);
             } else {
-                this.preview.setVisible(false);
+                this.tilePreview.setVisible(false);
+                this.buildingPreview.setVisible(false);
             }
         }
     }
