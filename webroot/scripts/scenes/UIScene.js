@@ -49,9 +49,11 @@ export class UIScene extends Phaser.Scene {
 
         // Save and reset buttons
         this.selectedButton = null;
+        this.createButtonShadow('resetButton', 5, 5);
         this.resetButton = this.add.image(5, 5, 'resetButton');
         this.resetButton.setOrigin(0, 0);
         this.configureButton("resetButton");
+        this.createButtonShadow('saveButton', 60, 5);
         this.saveButton = this.add.image(60, 5, 'saveButton');
         this.saveButton.setOrigin(0, 0);
         this.configureButton("saveButton");
@@ -249,6 +251,13 @@ export class UIScene extends Phaser.Scene {
             text += shopSelection['description'];
         }
         return text;
+    }
+
+    createButtonShadow(buttonName, buttonX, buttonY) {
+        let buttonShadow = this.add.image(buttonX + 2, buttonY + 2, buttonName);
+        buttonShadow.setOrigin(0, 0);
+        buttonShadow.setTint(0x000000);
+        buttonShadow.alpha = 0.5;
     }
 
     configureButton(buttonName) {
