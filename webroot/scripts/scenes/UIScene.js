@@ -43,17 +43,19 @@ export class UIScene extends Phaser.Scene {
                 useAdvancedWrap: true
             }
         };
-        let buttonTitleStyle = { 
-            font: "bold 16px Verdana"
-        };
+        let buttonTitleStyle = JSON.parse(JSON.stringify(subtitleTextStyle));
+        buttonTitleStyle.font = "20px Verdana";
+        buttonTitleStyle.shadow.blur = 1;
+
+        this.mapOriginX = this.game.renderer.width / 2 - 50;
 
         // Save and reset buttons
         this.selectedButton = null;
-        this.createButtonShadow('resetButton', 5, 5);
+        this.createButtonShadow('resetButton', 5, 5, 2).setOrigin(0, 0);
         this.resetButton = this.add.image(5, 5, 'resetButton');
         this.resetButton.setOrigin(0, 0);
         this.configureButton("resetButton");
-        this.createButtonShadow('saveButton', 60, 5);
+        this.createButtonShadow('saveButton', 60, 5, 2).setOrigin(0, 0);
         this.saveButton = this.add.image(60, 5, 'saveButton');
         this.saveButton.setOrigin(0, 0);
         this.configureButton("saveButton");
@@ -64,10 +66,10 @@ export class UIScene extends Phaser.Scene {
         this.statusMessage.alpha = 0;
 
         // Cash UI
-        this.currentCashText = this.add.text(this.game.renderer.width / 2 - 50, 25,
+        this.currentCashText = this.add.text(this.mapOriginX, 25,
             formatCash(state.getCurrentCash()), titleTextStyle);
         this.currentCashText.setOrigin(0.5);
-        this.cashGrowthRateText = this.add.text(this.game.renderer.width / 2 - 50, 70, 
+        this.cashGrowthRateText = this.add.text(this.mapOriginX, 70, 
             formatCash(state.getCashGrowthRate()) + "/second", subtitleTextStyle);
         this.cashGrowthRateText.setOrigin(0.5);
 
@@ -138,28 +140,35 @@ export class UIScene extends Phaser.Scene {
         this.tooltip.setVisible(false);
 
         // Reset confirmation popup
-        this.confirmationRect = this.add.rectangle(this.game.renderer.width / 2, this.game.renderer.height / 2 - 20, 500, 150, 0x404040);
-        this.confirmationTextLine1 = this.add.text(this.game.renderer.width / 2, this.game.renderer.height / 2 - 90, 
-            "Reset game?", subtitleTextStyle);
+        this.confirmationPanel = this.add.image(this.mapOriginX, this.game.renderer.height / 2 - 20, 'promptPanel');
+        this.confirmationPanel.setTint(0x4287f5);
+        this.confirmationTextLine1 = this.add.text(this.mapOriginX, this.game.renderer.height / 2 - 90, 
+            "Reset game?", { ...subtitleTextStyle, shadow: { ...subtitleTextStyle.shadow, blur: 1 }});
         this.confirmationTextLine1.setOrigin(0.5, 0);
-        this.confirmationTextLine2 = this.add.text(this.game.renderer.width / 2, this.game.renderer.height / 2 - 50, 
-            "You will lose all progress.", subtitleTextStyle);
+        this.confirmationTextLine2 = this.add.text(this.mapOriginX, this.game.renderer.height / 2 - 50, 
+            "You will lose all progress.", { ...subtitleTextStyle, shadow: { ...subtitleTextStyle.shadow, blur: 1 }});
         this.confirmationTextLine2.setOrigin(0.5, 0);
-        this.confirmButton = this.add.image(this.game.renderer.width / 2 + 50, this.game.renderer.height / 2 + 25, 'confirmButton');
+        let confirmShadow = this.createButtonShadow("confirmButton", this.mapOriginX + 70, this.game.renderer.height / 2 + 13, 1);
+        confirmShadow.setScale(0.75);
+        this.confirmButton = this.add.image(this.mapOriginX + 70, this.game.renderer.height / 2 + 13, 'confirmButton');
         this.confirmButton.setScale(0.75);
         this.configureButton("confirmButton");
-        this.confirmText = this.add.text(this.confirmButton.getTopCenter().x, this.confirmButton.getTopCenter().y - 2, "Reset", buttonTitleStyle);
-        this.confirmText.setOrigin(0.5, 1);
-        this.cancelButton = this.add.image(this.game.renderer.width / 2 - 50, this.game.renderer.height / 2 + 25, 'cancelButton');
+        this.confirmText = this.add.text(this.confirmButton.getTopCenter().x, this.confirmButton.getBottomCenter().y + 2, "Reset", buttonTitleStyle);
+        this.confirmText.setOrigin(0.5, 0);
+        let cancelShadow = this.createButtonShadow("cancelButton", this.mapOriginX - 70, this.game.renderer.height / 2 + 13, 1);
+        cancelShadow.setScale(0.75);
+        this.cancelButton = this.add.image(this.mapOriginX - 70, this.game.renderer.height / 2 + 13, 'cancelButton');
         this.cancelButton.setScale(0.75);
-        this.cancelText = this.add.text(this.cancelButton.getTopCenter().x, this.cancelButton.getTopCenter().y - 2, "Cancel", buttonTitleStyle);
-        this.cancelText.setOrigin(0.5, 1);
+        this.cancelText = this.add.text(this.cancelButton.getTopCenter().x, this.cancelButton.getBottomCenter().y + 2, "Cancel", buttonTitleStyle);
+        this.cancelText.setOrigin(0.5, 0);
         this.configureButton("cancelButton");
         this.confirmationPopup = this.add.group([
-            this.confirmationRect,
+            this.confirmationPanel,
             this.confirmationTextLine1, 
-            this.confirmationTextLine2, 
-            this.confirmButton, 
+            this.confirmationTextLine2,
+            confirmShadow,
+            this.confirmButton,
+            cancelShadow, 
             this.cancelButton,
             this.confirmText,
             this.cancelText]);
@@ -253,11 +262,11 @@ export class UIScene extends Phaser.Scene {
         return text;
     }
 
-    createButtonShadow(buttonName, buttonX, buttonY) {
-        let buttonShadow = this.add.image(buttonX + 2, buttonY + 2, buttonName);
-        buttonShadow.setOrigin(0, 0);
+    createButtonShadow(buttonName, buttonX, buttonY, offset) {
+        let buttonShadow = this.add.image(buttonX + offset, buttonY + offset, buttonName);
         buttonShadow.setTint(0x000000);
         buttonShadow.alpha = 0.5;
+        return buttonShadow;
     }
 
     configureButton(buttonName) {
