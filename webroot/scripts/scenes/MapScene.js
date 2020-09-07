@@ -88,16 +88,21 @@ export class MapScene extends Phaser.Scene {
 
         // Cash rate preview for new buildings, and info on existing buildings
         let previewTextStyle = { font: "24px Courier", align: "center", fill: "black" };
-        this.previewRect = this.uiScene.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0);
-        this.previewRect.setOrigin(0.5, 1);
-        this.previewRect.alpha = 0.6;
-        this.previewTextCost = this.uiScene.add.text(0, 0, "", previewTextStyle);
-        this.previewTextCost.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.previewTextGrowthRate = this.uiScene.add.text(0, 0, "", previewTextStyle);
-        this.previewTextGrowthRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.previewTextClickRate = this.uiScene.add.text(0, 0, "", previewTextStyle);
-        this.previewTextClickRate.setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.preview = this.add.group([this.previewRect, this.previewTextCost, this.previewTextGrowthRate, this.previewTextClickRate]);
+        let previewRect = this.uiScene.add.rectangle(0, 0, previewWidth, previewHeight, 0xfffbf0).setOrigin(0.5, 1).setAlpha(0.6);
+        this.previewTextCost = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+            previewRect.getTopLeft().y + previewTextMargin,
+            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
+        this.previewTextGrowthRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+            previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3,
+            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
+        this.previewTextClickRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+            previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3,
+            "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
+        this.preview = this.add.container(0, 0, [
+            previewRect,
+            this.previewTextCost,
+            this.previewTextGrowthRate,
+            this.previewTextClickRate]);
         this.preview.setVisible(false);
     }
 
@@ -220,14 +225,7 @@ export class MapScene extends Phaser.Scene {
     updatePreview(x, y, showExistingBuildingRates) {
         let worldCoords = this.tileCoordinatesToWorldCoordinates(x, y);
         let previewCoords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - 150);
-        this.previewRect.x = previewCoords.x;
-        this.previewRect.y = previewCoords.y;
-        this.previewTextCost.x = this.previewRect.getTopLeft().x + previewTextMargin;
-        this.previewTextCost.y = this.previewRect.getTopLeft().y + previewTextMargin;
-        this.previewTextGrowthRate.x = this.previewRect.getTopLeft().x + previewTextMargin;
-        this.previewTextGrowthRate.y = this.previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3;
-        this.previewTextClickRate.x = this.previewRect.getTopLeft().x + previewTextMargin;
-        this.previewTextClickRate.y = this.previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3;
+        this.preview.setPosition(previewCoords.x, previewCoords.y);
 
         // Show rates for whatever already exists on the tile
         if (showExistingBuildingRates) {
