@@ -3,11 +3,12 @@ import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection, i
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
 import { formatCash } from '../util/Util';
 
-const imageScale = 0.4;
-const topShopSelectionY = 80;
-const shopSelectionYMargin = 70;
-const shopSelectionXMargin = 70;
+const imageScale = 0.48;
+const topShopSelectionY = 90;
+const shopSelectionYMargin = 80;
+const shopSelectionXMargin = 80;
 const selectionBoxSize = 143 * imageScale;
+const selectionBoxScale = imageScale * 1.5;
 const tooltipWidth = 250;
 const tooltipHeight = 150;
 const tooltipTextMargin = 5;
@@ -83,14 +84,15 @@ export class UIScene extends Phaser.Scene {
         this.lastSave = -1;
 
         // Shop selection UI
-        let shopSelectionBox = this.add.rectangle(this.game.renderer.width - 75, this.game.renderer.height / 2, 150, this.game.renderer.height, 0x404040);
+        let shopSelectionBox = this.add.rectangle(this.game.renderer.width - 75, this.game.renderer.height / 2, 200, this.game.renderer.height, 0x000000);
+        shopSelectionBox.alpha = 0.5;
         shopSelectionBox.setInteractive();
         shopSelectionBox.on("pointerdown", () => {
             if (!isInDialog()) {
                 this.clearShopSelection();
             }
         });
-        this.add.text(this.game.renderer.width - 115, 9, "Shop", { font: "bold 30px Arial" });
+        this.add.text(this.game.renderer.width - 136, 9, "Shop", { ...subtitleTextStyle, font: "bold 34px Verdana" });
 
         // Shop selections
         this.shopItems = [];
@@ -108,25 +110,21 @@ export class UIScene extends Phaser.Scene {
 
         for (let i = 0; i < this.shopItems.length; i++) {
             let position = this.getSelectionPosition(i);
-            this.shopItems[i].selectionBox = this.add.rectangle(position.x, position.y, selectionBoxSize, selectionBoxSize, 0x999999);
+            this.shopItems[i].selectionBox = this.add.image(position.x, position.y, 'shopItemPanel');
+            this.shopItems[i].selectionBox.setScale(selectionBoxScale);
             this.shopItems[i].sprite = this.add.image(position.x, position.y, this.shopItems[i].selection.getName()).setScale(imageScale);
             this.shopItems[i].selectionBox.setInteractive();
             this.shopItems[i].selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
             this.shopItems[i].selectionBox.on("pointerover", () => { this.setTooltip(i); });
             this.shopItems[i].selectionBox.on("pointerout", () => { this.tooltip.setVisible(false); });
-            if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
-                let priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 
-                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json)),
-                    { font: "bold 10px Verdana", fill: "#000000", align: "center" });
-                priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
-            }
         }
 
         // Shop selection highlight
         let selectedPosition = this.getSelectionPosition(0);
         this.shopHighlight = this.add.rectangle(selectedPosition.x, selectedPosition.y, selectionBoxSize, selectionBoxSize);
         this.shopHighlight.isFilled = false;
-        this.shopHighlight.setStrokeStyle(5, 0xFFFFFF);
+        this.shopHighlight.setStrokeStyle(5, 0x4287f5);
+        this.shopHighlight.alpha = 0.75;
         this.clearShopSelection();
         this.updateValidShopSelections(state.getCurrentCash());
 
@@ -179,7 +177,7 @@ export class UIScene extends Phaser.Scene {
 
     getSelectionPosition(index) {
         return new Phaser.Math.Vector2(
-            this.game.renderer.width - 110 + (shopSelectionXMargin * (index % 2)),
+            this.game.renderer.width - 128 + (shopSelectionXMargin * (index % 2)),
             topShopSelectionY + (shopSelectionYMargin * Math.floor(index / 2)));
     }
 
