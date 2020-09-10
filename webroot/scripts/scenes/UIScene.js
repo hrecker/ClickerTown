@@ -47,6 +47,11 @@ export class UIScene extends Phaser.Scene {
         let buttonTitleStyle = JSON.parse(JSON.stringify(subtitleTextStyle));
         buttonTitleStyle.font = "20px Verdana";
         buttonTitleStyle.shadow.blur = 1;
+        let shopPriceStyle = JSON.parse(JSON.stringify(subtitleTextStyle));
+        shopPriceStyle.font = "12px Verdana";
+        shopPriceStyle.shadow.blur = 2;
+        shopPriceStyle.align = "center";
+
 
         const mapOriginX = this.game.renderer.width / 2 - 50;
 
@@ -117,6 +122,13 @@ export class UIScene extends Phaser.Scene {
             this.shopItems[i].selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
             this.shopItems[i].selectionBox.on("pointerover", () => { this.setTooltip(i); });
             this.shopItems[i].selectionBox.on("pointerout", () => { this.tooltip.setVisible(false); });
+            if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
+                this.add.rectangle(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4,
+                    selectionBoxSize + 3, selectionBoxSize / 4 + 1, 0x000000).setOrigin(0).setAlpha(0.5);
+                this.shopItems[i].priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 	
+                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json)), shopPriceStyle);	
+                this.shopItems[i].priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
+            }
         }
 
         // Shop selection highlight
@@ -203,9 +215,13 @@ export class UIScene extends Phaser.Scene {
             if (this.shopItems[i].selection.selectionType == ShopSelectionType.DEMOLITION || this.shopItems[i].selection.getPrice(this.cache.json) <= currentCash) {
                 this.shopItems[i].sprite.alpha = 1;
                 this.shopItems[i].selectionBox.setInteractive();
+                if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
+                    this.shopItems[i].priceText.setColor("#ffffff");
+                }
             // Otherwise prevent selecting this option
             } else {
                 this.shopItems[i].sprite.alpha = 0.5;
+                this.shopItems[i].priceText.setColor("#ff6666");
                 this.shopItems[i].selectionBox.disableInteractive();
                 if (getShopSelection() == this.shopItems[i].selection) {
                     this.clearShopSelection();
