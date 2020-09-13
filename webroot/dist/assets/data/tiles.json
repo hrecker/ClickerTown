@@ -1,10 +1,10 @@
 {
     "Concrete": {
         "name": "Concrete",
-        "description": "+0.1 click value for each adjacent concrete tile",
+        "description": "A sturdy foundation.",
         "sprite": "cityTiles_072.png",
-        "cost": 2,
-        "baseCashGrowthRate": -1,
+        "cost": 0.5,
+        "baseCashGrowthRate": 0,
         "baseClickValue": 0,
         "startingTile": false
     },
@@ -30,7 +30,7 @@
         "name": "Sand",
         "description": "+0.5 growth rate on when located the edge of the map",
         "sprite": "landscapeTiles_059.png",
-        "cost": 0.5,
+        "cost": 1,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
         "startingTile": true

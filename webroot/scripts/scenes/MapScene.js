@@ -85,8 +85,7 @@ export class MapScene extends Phaser.Scene {
         this.controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
 
         // Cash rate preview for new buildings, and info on existing buildings/tiles
-        this.tilePreview = this.createPreview('tilePreview');
-        this.buildingPreview = this.createPreview('buildingPreview');
+        this.createPreview();
     }
 
     // If the game is reset, will need to update all displayed sprites appropriately
@@ -206,40 +205,31 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Create the popup preview used to show building and tile status
-    createPreview(previewName) {
+    createPreview() {
         let previewTextStyle = { font: "22px Verdana", align: "center" };
         let previewRect = this.uiScene.add.nineslice(0, 0, 200, 125, 'greyPanel', 7).setOrigin(0.5, 1).setAlpha(0.65);
-        this[previewName + 'Title'] = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+        this.tilePreviewTitle = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
             previewRect.getTopLeft().y + previewTextMargin,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this[previewName + 'GrowthRate'] = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+        this.tilePreviewGrowthRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
             previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this[previewName + 'ClickRate'] = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
+        this.tilePreviewClickRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
             previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        let preview = this.uiScene.add.container(0, 0, [
+        this.tilePreview = this.uiScene.add.container(0, 0, [
             previewRect,
-            this[previewName + 'Title'],
-            this[previewName + 'GrowthRate'],
-            this[previewName + 'ClickRate']]);
-        preview.setVisible(false);
-        return preview;
+            this.tilePreviewTitle,
+            this.tilePreviewGrowthRate,
+            this.tilePreviewClickRate]);
+        this.tilePreview.setVisible(false);
     }
 
     // Update building and tile preview values
     updatePreview(x, y, showExistingBuildingRates) {
         let worldCoords = this.tileCoordinatesToWorldCoordinates(x, y);
         let previewCoords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - 150);
-        if (showExistingBuildingRates && map.getMap()[x][y].building) {
-            // Show previews side-by-side when there is a building and a tile present
-            this.tilePreview.setPosition(previewCoords.x - previewWidth / 2 - 1, previewCoords.y);
-            this.buildingPreview.setPosition(previewCoords.x + previewWidth / 2 + 1, previewCoords.y);
-            this.buildingPreview.setVisible(true);
-        } else {
-            this.tilePreview.setPosition(previewCoords.x, previewCoords.y);
-            this.buildingPreview.setVisible(false);
-        }
+        this.tilePreview.setPosition(previewCoords.x, previewCoords.y);
         this.tilePreview.setVisible(true);
 
         // Show rates for whatever already exists on the tile
@@ -249,16 +239,15 @@ export class MapScene extends Phaser.Scene {
                 let shortName = this.cache.json.get('buildings')[buildingName]['shortName'];
                 buildingName = shortName ? shortName : buildingName;
                 // Building values
-                this.updatePreviewTexts('buildingPreview',
-                    buildingName,
+                this.updatePreviewTexts(buildingName,
                     build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), map.getMap(), x, y),
                     build.getBuildingClickValue(this.cache.json.get('buildings'), map.getMap(), x, y));
+            } else {
+                // Tile values
+                this.updatePreviewTexts(map.getMap()[x][y].tile,
+                    tile.getTileCashGrowthRate(this.cache.json.get('tiles'), map.getMap(), x, y),
+                    tile.getTileClickValue(this.cache.json.get('tiles'), map.getMap(), x, y));
             }
-            // Tile values
-            this.updatePreviewTexts('tilePreview',
-                map.getMap()[x][y].tile,
-                tile.getTileCashGrowthRate(this.cache.json.get('tiles'), map.getMap(), x, y),
-                tile.getTileClickValue(this.cache.json.get('tiles'), map.getMap(), x, y));
         // Showing shop selection rates preview
         } else {
             let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
@@ -269,7 +258,7 @@ export class MapScene extends Phaser.Scene {
                 clickValue: rates['clickValue'] - state.getClickCashValue()
             }
             // Preview difference in rates that would result after shop selection is placed
-            this.updatePreviewTexts('tilePreview',
+            this.updatePreviewTexts(
                 -1 * map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, this.tileHighlightActiveX, this.tileHighlightActiveY), 
                 rateDiffs.cashGrowthRate,
                 rateDiffs.clickValue);
@@ -277,10 +266,10 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Update each text value for the specified preview popup
-    updatePreviewTexts(previewName, title, growthRate, clickRate) {
-        this.updatePreviewText(this[previewName + 'Title'], title, "");
-        this.updatePreviewText(this[previewName + 'GrowthRate'], growthRate, "/s");
-        this.updatePreviewText(this[previewName + 'ClickRate'], clickRate, "/c");
+    updatePreviewTexts(title, growthRate, clickRate) {
+        this.updatePreviewText(this.tilePreviewTitle, title, "");
+        this.updatePreviewText(this.tilePreviewGrowthRate, growthRate, "/s");
+        this.updatePreviewText(this.tilePreviewClickRate, clickRate, "/c");
     }
 
     // Update one text value in a preview popup
@@ -375,7 +364,6 @@ export class MapScene extends Phaser.Scene {
                 this.updatePreview(tile.x, tile.y, true);
             } else {
                 this.tilePreview.setVisible(false);
-                this.buildingPreview.setVisible(false);
             }
         }
     }

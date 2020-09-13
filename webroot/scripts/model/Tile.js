@@ -34,18 +34,5 @@ export function getTileClickValue(tilesJson, map, x, y) {
     }
     let tile = tilesJson[map[x][y].tile];
     let baseClickValue = tile['baseClickValue'];
-    
-    switch (tile['name']) {
-        case "Concrete":
-            // Concrete gets +0.1 click value for adjacent concrete tiles
-            let adjacentTiles = getAdjacentCoordinates(x, y);
-            adjacentTiles.forEach(adjacent => {
-                if (map[adjacent.x][adjacent.y].tile == "Concrete") {
-                    baseClickValue += 0.1;
-                }
-            });
-            break;
-    }
-
     return baseClickValue;
 }

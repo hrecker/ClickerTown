@@ -1,7 +1,7 @@
 import * as state from '../state/CashState';
 import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
-import { formatCash, isBlank, negativeCashColor, positiveCashColor, formatPhaserCashText } from '../util/Util';
+import { formatCash, isBlank, formatPhaserCashText } from '../util/Util';
 
 const imageScale = 0.48;
 const topShopSelectionY = 90;
