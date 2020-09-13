@@ -12,6 +12,11 @@ var config = {
     physics: {
         default: 'arcade'
     },
+    plugins: {
+        global: [ 
+            NineSlice.Plugin.DefaultCfg
+        ],
+    },
     scene: [
         LoadingScene,
         BackgroundScene,

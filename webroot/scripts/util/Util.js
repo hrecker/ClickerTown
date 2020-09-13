@@ -1,3 +1,6 @@
+export const positiveCashColor = "#15b800";
+export const negativeCashColor = "#f54242";
+
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
 export function getRandomInt(min, max) {
     min = Math.ceil(min);
@@ -23,4 +26,31 @@ export function formatCash(cashValue) {
         result = "$0.00";
     }
     return result;
+}
+
+export function formatPhaserCashText(textObject, cashValue, suffix, includePrefix, invertColor) {
+    let prefix = "";
+    if (cashValue > 0.001) {
+        prefix += "+";
+        if (invertColor) {
+            textObject.setColor(negativeCashColor);
+        } else {
+            textObject.setColor(positiveCashColor);
+        }
+    } else if (cashValue < -0.001) {
+        if (invertColor) {
+            textObject.setColor(positiveCashColor);
+        } else {
+            textObject.setColor(negativeCashColor);
+        }
+    } else {
+        textObject.setColor("#000000");
+    }
+    let cashText = formatCash(cashValue) + suffix;
+    textObject.setText(includePrefix ? prefix + cashText : cashText);
+}
+
+// https://stackoverflow.com/questions/154059/how-can-i-check-for-an-empty-undefined-null-string-in-javascript
+export function isBlank(str) {
+    return (!str || /^\s*$/.test(str));
 }

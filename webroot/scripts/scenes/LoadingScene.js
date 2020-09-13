@@ -30,10 +30,8 @@ export class LoadingScene extends Phaser.Scene {
         this.load.image('confirmButtonDown', 'assets/sprites/ui/confirm_button_down.png');
         this.load.image('cancelButton', 'assets/sprites/ui/cancel_button.png');
         this.load.image('cancelButtonDown', 'assets/sprites/ui/cancel_button_down.png');
-        this.load.image('promptPanel', 'assets/sprites/ui/prompt_panel.png');
-        this.load.image('previewPanel', 'assets/sprites/ui/building_preview_panel.png');
         this.load.image('slider', 'assets/sprites/ui/grey_sliderVertical.png');
-        this.load.image('shopItemPanel', 'assets/sprites/ui/shop_item_panel.png');
+        this.load.image('greyPanel', 'assets/sprites/ui/grey_panel.png');
     }
 
     create() {

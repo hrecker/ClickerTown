@@ -4,7 +4,7 @@ import * as build from '../model/Building';
 import * as tile from '../model/Tile';
 import { ShopSelectionType, addShopSelectionListener, isInDialog } from '../state/UIState';
 import { addGameResetListener } from '../state/GameState';
-import { formatCash } from '../util/Util';
+import { formatCash, formatPhaserCashText } from '../util/Util';
 
 const tileScale = 1;
 const blockImageHeight = 100 * tileScale;
@@ -14,8 +14,6 @@ const hoverImageAlpha = 0.65;
 const previewWidth = 200;
 const previewHeight = 125;
 const previewTextMargin = 7;
-const positiveCashColor = "#15b800";
-const negativeCashColor = "#f54242";
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -210,7 +208,7 @@ export class MapScene extends Phaser.Scene {
     // Create the popup preview used to show building and tile status
     createPreview(previewName) {
         let previewTextStyle = { font: "22px Verdana", align: "center" };
-        let previewRect = this.uiScene.add.image(0, 0, 'previewPanel').setOrigin(0.5, 1).setAlpha(0.65);
+        let previewRect = this.uiScene.add.nineslice(0, 0, 200, 125, 'greyPanel', 7).setOrigin(0.5, 1).setAlpha(0.65);
         this[previewName + 'Title'] = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
             previewRect.getTopLeft().y + previewTextMargin,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
@@ -293,16 +291,7 @@ export class MapScene extends Phaser.Scene {
             text.setText(value);
         } else {
             // Highlight numeric values based on positive/negative
-            let prefix = "";
-            if (value > 0.001) {
-                prefix += "+";
-                text.setColor(positiveCashColor);
-            } else if (value < -0.001) {
-                text.setColor(negativeCashColor);
-            } else {
-                text.setColor("#000000");
-            }
-            text.setText(prefix + formatCash(value) + suffix);
+            formatPhaserCashText(text, value, suffix, true, false);
         }
     }
 
