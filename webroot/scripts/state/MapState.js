@@ -37,13 +37,20 @@ export function areCoordinatesValid(x, y) {
 }
 
 export function getAdjacentCoordinates(x, y) {
-    let result = [
-        new Phaser.Math.Vector2(x - 1, y),
-        new Phaser.Math.Vector2(x + 1, y),
-        new Phaser.Math.Vector2(x, y - 1),
-        new Phaser.Math.Vector2(x, y + 1)
-    ];
-    return result.filter(coords => areCoordinatesValid(coords.x, coords.y));
+    return getTilesWithinRange(x, y, 1);
+}
+
+export function getTilesWithinRange(x, y, range) {
+    range = Math.abs(range);
+    let result = [];
+    for (let deltaX = -range; deltaX <= range; deltaX++) {
+        for (let deltaY = Math.abs(deltaX) - range; deltaY <= range - Math.abs(deltaX); deltaY++) {
+            if ((deltaX != 0 || deltaY != 0) && areCoordinatesValid(x + deltaX, y + deltaY)) {
+                result.push(new Phaser.Math.Vector2(x + deltaX, y + deltaY));
+            }
+        }
+    }
+    return result;
 }
 
 export function getShopSelectionPrice(jsonCache, selection, targetX, targetY) {

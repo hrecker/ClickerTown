@@ -1,33 +1,43 @@
 {
-    "Convenience Store": {
-        "name": "Convenience Store",
-        "shortName": "C-Store",
+    "House": {
+        "name": "House",
         "tileName": "Concrete",
-        "description": "-1 growth rate for each adjacent convenience store",
-        "sprite": "buildingTiles_004.png",
-        "cost": 20,
+        "description": "A comfy little house.",
+        "sprite": "house.png",
+        "cost": 25,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 3,
+        "baseCashGrowthRate": 0.25,
         "baseClickValue": 0
     },
     "Restaurant": {
         "name": "Restaurant",
         "tileName": "Concrete",
-        "description": "+1 growth rate for each adjacent grass tile",
-        "sprite": "buildingTiles_018.png",
-        "cost": 25,
+        "description": "+$1/second for each house within 2 tiles.",
+        "sprite": "restaurant.png",
+        "cost": 150,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 3,
-        "baseClickValue": 0.2
+        "baseCashGrowthRate": -1,
+        "baseClickValue": 0.1
+    },
+    "Convenience Store": {
+        "name": "Convenience Store",
+        "shortName": "C-Store",
+        "tileName": "Concrete",
+        "description": "-$2/second for each other convenience store within 3 tiles.",
+        "sprite": "convenienceStore.png",
+        "cost": 250,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 1,
+        "baseClickValue": 0
     },
     "Bank": {
         "name": "Bank",
         "tileName": "Concrete",
-        "description": "-10 growth rate for each adjacent bank, +2 for each other adjacent building",
-        "sprite": "buildingTiles_009.png",
-        "cost": 100,
+        "description": "+$0.25/second for each house within 5 tiles.\n-$10/second for each bank within 5 tiles.",
+        "sprite": "bank.png",
+        "cost": 2000,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 15,
-        "baseClickValue": 0.5
+        "baseCashGrowthRate": 5,
+        "baseClickValue": 1
     }
 }

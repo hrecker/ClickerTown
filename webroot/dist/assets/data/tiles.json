@@ -12,7 +12,7 @@
         "name": "Grass",
         "description": "+0.1 growth rate for each adjacent grass tile",
         "sprite": "landscapeTiles_067.png",
-        "cost": 1,
+        "cost": 25,
         "baseCashGrowthRate": 0.1,
         "baseClickValue": 0,
         "startingTile": false
@@ -30,7 +30,7 @@
         "name": "Sand",
         "description": "+0.5 growth rate on when located the edge of the map",
         "sprite": "landscapeTiles_059.png",
-        "cost": 1,
+        "cost": 50,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
         "startingTile": true

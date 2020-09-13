@@ -1,4 +1,4 @@
-import { getAdjacentCoordinates } from '../state/MapState';
+import { getTilesWithinRange } from '../state/MapState';
 
 export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
     if (!map[x][y].building) {
@@ -7,32 +7,36 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
     let building = buildingsJson[map[x][y].building];
     let cashGrowthRate = building['baseCashGrowthRate'];
 
-    let adjacentTiles = getAdjacentCoordinates(x, y);
+    let tilesToCheck;
     switch (building['name']) {
-        case "Convenience Store":
-            // Convenience Store gets -1 growth rate for adjacent Convenience Stores
-            adjacentTiles.forEach(adjacent => {
-                if (map[adjacent.x][adjacent.y].building == "Convenience Store") {
-                    cashGrowthRate -= 1;
-                }
-            });
-            break;
         case "Restaurant":
-            // Restaraunts get +1 growth rate for adjacent grass tiles
-            adjacentTiles.forEach(adjacent => {
-                if (map[adjacent.x][adjacent.y].tile == "Grass") {
+            // Restaraunts get +$1/second for each house within 2 tiles
+            tilesToCheck = getTilesWithinRange(x, y, 2);
+            tilesToCheck.forEach(tile => {
+                if (map[tile.x][tile.y].building == "House") {
                     cashGrowthRate += 1;
                 }
             });
             break;
+        case "Convenience Store":
+            // Convenience Store gets -$2/second for Convenience Stores within 3 tiles
+            tilesToCheck = getTilesWithinRange(x, y, 3);
+            tilesToCheck.forEach(tile => {
+                if (map[tile.x][tile.y].building == "Convenience Store") {
+                    cashGrowthRate -= 2;
+                }
+            });
+            break;
         case "Bank":
-            // Banks get -10 growth rate for adjacent banks, and +2 for each other adjacent buildings
-            adjacentTiles.forEach(adjacent => {
-                let building = map[adjacent.x][adjacent.y].building;
+            // Banks get +$0.25/second for each house within 5 tiles, and
+            // -$10/second for each bank within 5 tiles
+            tilesToCheck = getTilesWithinRange(x, y, 5);
+            tilesToCheck.forEach(tile => {
+                let building = map[tile.x][tile.y].building;
                 if (building == "Bank") {
                     cashGrowthRate -= 10;
-                } else if (building) {
-                    cashGrowthRate += 2;
+                } else if (building == "House") {
+                    cashGrowthRate += 0.25;
                 }
             });
             break;

@@ -1,6 +1,6 @@
 {
-    "startingCash": 50,
-    "startingGrowthRate": 1,
+    "startingCash": 0,
+    "startingGrowthRate": 0,
     "startingClickValue": 1,
     "mapWidth": 6,
     "mapHeight": 6,
