@@ -73,10 +73,10 @@ export class UIScene extends Phaser.Scene {
 
         // Cash UI
         this.currentCashText = this.add.text(mapOriginX, 25,
-            formatCash(state.getCurrentCash()), titleTextStyle);
+            formatCash(state.getCurrentCash(), false), titleTextStyle);
         this.currentCashText.setOrigin(0.5);
         this.cashGrowthRateText = this.add.text(mapOriginX, 70, 
-            formatCash(state.getCashGrowthRate()) + "/second", subtitleTextStyle);
+            formatCash(state.getCashGrowthRate(), false) + "/second", subtitleTextStyle);
         this.cashGrowthRateText.setOrigin(0.5);
 
         // Listeners
@@ -126,7 +126,7 @@ export class UIScene extends Phaser.Scene {
                 this.add.rectangle(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4,
                     selectionBoxSize + 3, selectionBoxSize / 4 + 1, 0x000000).setOrigin(0).setAlpha(0.5);
                 this.shopItems[i].priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 	
-                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json)), shopPriceStyle);	
+                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json), true), shopPriceStyle);	
                 this.shopItems[i].priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
             }
         }
@@ -411,12 +411,12 @@ export class UIScene extends Phaser.Scene {
     }
 
     cashChangeListener(cash, scene) {
-        scene.currentCashText.setText(formatCash(cash));
+        scene.currentCashText.setText(formatCash(cash, false));
         scene.updateValidShopSelections(cash);
     }
 
     cashGrowthListener(cashGrowth, scene) {
-        scene.cashGrowthRateText.setText(formatCash(cashGrowth) + "/second");
+        scene.cashGrowthRateText.setText(formatCash(cashGrowth, false) + "/second");
     }
 
     addCashPerSecond(seconds) {

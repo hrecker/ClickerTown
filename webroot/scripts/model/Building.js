@@ -40,6 +40,39 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
                 }
             });
             break;
+        case "Warehouse":
+            // Warehouses get -$1/second for each house within 3 tiles
+            tilesToCheck = getTilesWithinRange(x, y, 3);
+            tilesToCheck.forEach(tile => {
+                let building = map[tile.x][tile.y].building;
+                if (building == "House") {
+                    cashGrowthRate -= 1;
+                }
+            });
+            break;
+        case "Courthouse":
+            // Courthouses get +$2/second for each non-hermit building within 4 tiles,
+            // They also get -$100/second for each courthouse within 4 tiles
+            tilesToCheck = getTilesWithinRange(x, y, 4);
+            tilesToCheck.forEach(tile => {
+                let building = map[tile.x][tile.y].building;
+                if (building == "Courthouse") {
+                    cashGrowthRate -= 100;
+                } else if (building && building !== "Hermit") {
+                    cashGrowthRate += 2;
+                }
+            });
+            break;
+        case "Hermit":
+            // Hermits get -$2/second for each building within 3 tiles
+            tilesToCheck = getTilesWithinRange(x, y, 3);
+            tilesToCheck.forEach(tile => {
+                let building = map[tile.x][tile.y].building;
+                if (building) {
+                    cashGrowthRate -= 2;
+                }
+            });
+            break;
     }
 
     return cashGrowthRate;

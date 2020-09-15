@@ -15,7 +15,7 @@ export function getRandomProperty(obj) {
 };
 
 // https://stackoverflow.com/questions/149055/how-to-format-numbers-as-currency-string
-export function formatCash(cashValue) {
+export function formatCash(cashValue, stripCents) {
     const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
@@ -24,6 +24,9 @@ export function formatCash(cashValue) {
     let result = formatter.format(cashValue);
     if (result === "-$0.00") {
         result = "$0.00";
+    }
+    if (stripCents && result.endsWith(".00")) {
+        result = result.substring(0, result.length - 3);
     }
     return result;
 }

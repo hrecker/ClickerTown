@@ -28,7 +28,17 @@
         "cost": 250,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 1,
-        "baseClickValue": 0
+        "baseClickValue": 1.5
+    },
+    "Warehouse": {
+        "name": "Warehouse",
+        "tileName": "Concrete",
+        "description": "-$1/second for each house within 3 tiles.",
+        "sprite": "warehouse.png",
+        "cost": 500,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 3.5,
+        "baseClickValue": 0.25
     },
     "Bank": {
         "name": "Bank",
@@ -39,5 +49,35 @@
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 5,
         "baseClickValue": 1
+    },
+    "Mall": {
+        "name": "Mall",
+        "tileName": "Concrete",
+        "description": "Reduces $/second, but increases $/click greatly.",
+        "sprite": "mall.png",
+        "cost": 5000,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": -5,
+        "baseClickValue": 5
+    },
+    "Courthouse": {
+        "name": "Courthouse",
+        "tileName": "Concrete",
+        "description": "+$2/second for every non-Hermit, non-Courthouse building within 4 tiles. -$100/second for each Courthouse within 4 tiles.",
+        "sprite": "courthouse.png",
+        "cost": 25000,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": -20,
+        "baseClickValue": 1.5
+    },
+    "Hermit": {
+        "name": "Hermit",
+        "tileName": "Concrete",
+        "description": "-$2/second for every other building within 3 tiles.",
+        "sprite": "hermit.png",
+        "cost": 30000,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 50,
+        "baseClickValue": 3
     }
 }
