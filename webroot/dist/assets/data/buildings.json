@@ -12,7 +12,7 @@
     "Restaurant": {
         "name": "Restaurant",
         "tileName": "Concrete",
-        "description": "+$1/second for each house within 2 tiles.",
+        "description": "+$1/second for each House within 2 tiles.",
         "sprite": "restaurant.png",
         "cost": 150,
         "shopSelectionType": "TILE_AND_BUILDING",
@@ -23,7 +23,7 @@
         "name": "Convenience Store",
         "shortName": "C-Store",
         "tileName": "Concrete",
-        "description": "-$2/second for each other convenience store within 3 tiles.",
+        "description": "-$2/second for each other Convenience Store within 3 tiles.",
         "sprite": "convenienceStore.png",
         "cost": 250,
         "shopSelectionType": "TILE_AND_BUILDING",
@@ -33,7 +33,7 @@
     "Warehouse": {
         "name": "Warehouse",
         "tileName": "Concrete",
-        "description": "-$1/second for each house within 3 tiles.",
+        "description": "-$1/second for each House within 3 tiles.",
         "sprite": "warehouse.png",
         "cost": 500,
         "shopSelectionType": "TILE_AND_BUILDING",
@@ -43,12 +43,22 @@
     "Bank": {
         "name": "Bank",
         "tileName": "Concrete",
-        "description": "+$0.25/second for each house within 5 tiles.\n-$10/second for each bank within 5 tiles.",
+        "description": "+$0.25/second for each House within 5 tiles.\n-$10/second for each Bank within 5 tiles.",
         "sprite": "bank.png",
         "cost": 2000,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 5,
         "baseClickValue": 1
+    },
+    "Apartment": {
+        "name": "Apartment",
+        "tileName": "Concrete",
+        "description": "Counts as 3 Houses in a single tile.",
+        "sprite": "apartment.png",
+        "cost": 2500,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 2,
+        "baseClickValue": 0.5
     },
     "Mall": {
         "name": "Mall",
@@ -79,5 +89,15 @@
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 50,
         "baseClickValue": 3
+    },
+    "Office": {
+        "name": "Office",
+        "tileName": "Concrete",
+        "description": "+$10/second for each Warehouse within 3 tiles.",
+        "sprite": "office.png",
+        "cost": 50000,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 15,
+        "baseClickValue": 2
     }
 }
