@@ -53,6 +53,15 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
             tilesToCheck = getTilesWithinRange(x, y, 3);
             cashGrowthRate -= countHouses(map, tilesToCheck);
             break;
+        case "Fountain":
+            // Fountains get +$0.75/second for each grass within 2 tiles
+            tilesToCheck = getTilesWithinRange(x, y, 2);
+            tilesToCheck.forEach(tile => {
+                if (map[tile.x][tile.y].tile == "Grass") {
+                    cashGrowthRate += 0.75;
+                }
+            });
+            break;
         case "Courthouse":
             // Courthouses get +$2/second for each non-hermit building within 4 tiles,
             // They also get -$100/second for each courthouse within 4 tiles

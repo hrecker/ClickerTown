@@ -40,6 +40,16 @@
         "baseCashGrowthRate": 3.5,
         "baseClickValue": 0.25
     },
+    "Fountain": {
+        "name": "Fountain",
+        "tileName": "Concrete",
+        "description": "+$0.75/second for each Grass within 2 tiles",
+        "sprite": "fountain.png",
+        "cost": 1000,
+        "shopSelectionType": "TILE_AND_BUILDING",
+        "baseCashGrowthRate": 0,
+        "baseClickValue": 0.50
+    },
     "Bank": {
         "name": "Bank",
         "tileName": "Concrete",
