@@ -13,6 +13,7 @@ const maxTooltipWidth = 225;
 const tooltipTextMargin = 10;
 const tooltipTextBreakYMargin = 12;
 const tooltipTextBreakXMargin = 30;
+const tooltipFlipIndex = 8;
 
 export class UIScene extends Phaser.Scene {
     constructor() {
@@ -251,20 +252,27 @@ export class UIScene extends Phaser.Scene {
         }
         let tooltipPosition = this.getSelectionPosition(index);
         this.tooltipPanel.setPosition(tooltipPosition.x, tooltipPosition.y);
+        // Flip tooltip for lower selections so it doesn't get cut off at the bottom of the screen
+        if (index < tooltipFlipIndex) {
+            this.tooltipPanel.setOrigin(1, 0);
+        } else {
+            this.tooltipPanel.setOrigin(1, 1);
+        }
         this.setTooltipText(index);
 
         let panelWidth = 0;
         let panelHeight = tooltipTextMargin;
-        let tooltipTextY = [];
+        let tooltipTextYDiff = [];
         // Resize panel
         for (let i = 0; i < this.tooltipTexts.length; i++) {
             if (!isBlank(this.tooltipTexts[i].text)) {
                 panelWidth = Math.max(panelWidth, this.tooltipTexts[i].width + 2 * tooltipTextMargin);
-                // No line break is added between the cash growth rates
-                if (i > 0 && !this.tooltipTexts[i].text.includes("/click")) {
+                // No line break is added between the cash growth rates. Also should ignore presence of "/click"
+                // in the last text, since it is the description, no the click value.
+                if (i > 0 && (i == this.tooltipTexts.length - 1 || !this.tooltipTexts[i].text.includes("/click"))) {
                     panelHeight += tooltipTextBreakYMargin;
                 }
-                tooltipTextY[i] = tooltipPosition.y + panelHeight;
+                tooltipTextYDiff[i] = panelHeight;
                 panelHeight += this.tooltipTexts[i].height + tooltipTextMargin;
             }
         }
@@ -280,7 +288,7 @@ export class UIScene extends Phaser.Scene {
         
         // Move text and break objects
         for (let i = 0; i < this.tooltipTexts.length; i++) {
-            this.tooltipTexts[i].setPosition(this.tooltipPanel.getTopCenter().x, tooltipTextY[i]);
+            this.tooltipTexts[i].setPosition(this.tooltipPanel.getTopCenter().x, this.tooltipPanel.getTopCenter().y + tooltipTextYDiff[i]);
             this.tooltipTexts[i].width = panelWidth - 2 * tooltipTextMargin;
         }
         let breakX = this.tooltipPanel.getTopLeft().x + tooltipTextBreakXMargin;
