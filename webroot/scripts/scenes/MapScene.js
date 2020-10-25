@@ -36,6 +36,7 @@ export class MapScene extends Phaser.Scene {
         this.uiScene = this.game.scene.getScene('UIScene');
 
         // Blocks
+        map.addMapRotationListener(this.mapRotationListener, this);
         this.createTileMap();
         this.syncTileMap();
         state.updateCashRates(this.cache.json, map.getMap());
@@ -90,6 +91,10 @@ export class MapScene extends Phaser.Scene {
         this.createPreview();
     }
 
+    mapRotationListener(mapRotation, scene) {
+        scene.syncTileMap();
+    }
+
     // If the game is reset, will need to update all displayed sprites appropriately
     gameResetListener(scene) {
         scene.syncTileMap();
@@ -100,12 +105,18 @@ export class MapScene extends Phaser.Scene {
     createTileMap() {
         this.tileMapImages = new Array(this.mapWidth);
         this.buildingImages = new Array(this.mapWidth);
+        this.tileMapR90 = new Array(this.mapHeight);
+        this.tileMapR180 = new Array(this.mapWidth);
+        this.tileMapR270 = new Array(this.mapHeight);
 
         for (let x = this.mapWidth - 1; x >= 0; x--) {
             this.tileMapImages[x] = new Array(this.mapHeight);
             this.buildingImages[x] = new Array(this.mapHeight);
+            this.tileMapR90[x] = new Array(this.mapWidth);
+            this.tileMapR180[x] = new Array(this.mapHeight);
+            this.tileMapR270[x] = new Array(this.mapWidth);
             for (let y = this.mapHeight - 1; y >= 0; y--) {
-                let tileCoords = this.tileCoordinatesToWorldCoordinates(x, y);
+                let tileCoords = this.displayTileCoordinatesToWorldCoordinates(x, y);
                 let tileImage = this.add.image(tileCoords.x, tileCoords.y, 
                     map.getMap()[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
                 this.tileMapImages[x][y] = tileImage;
@@ -114,6 +125,11 @@ export class MapScene extends Phaser.Scene {
                     '').setScale(tileScale).setOrigin(0.5, 1);
                 buildingImage.setVisible(false);
                 this.buildingImages[x][y] = buildingImage;
+                // Build matrices to translate between canvas tiles and map tiles when
+                // the map has been rotated.
+                this.tileMapR90[x][y] = new Phaser.Math.Vector2(this.mapHeight - y - 1, x);
+                this.tileMapR180[x][y] = new Phaser.Math.Vector2(this.mapWidth - x - 1  , this.mapHeight - y - 1);
+                this.tileMapR270[x][y] = new Phaser.Math.Vector2(y, this.mapWidth - x - 1);
             }
         }
     }
@@ -122,13 +138,14 @@ export class MapScene extends Phaser.Scene {
     syncTileMap() {
         for (let x = this.mapWidth - 1; x >= 0; x--) {
             for (let y = this.mapHeight - 1; y >= 0; y--) {
-                let building = map.getMap()[x][y].building;
-                let rotation = map.getMap()[x][y].rotation;
+                let mapCoords = this.displayToMapCoordinates(x, y);
+                let building = map.getMap()[mapCoords.x][mapCoords.y].building;
+                let rotation = (map.getMap()[mapCoords.x][mapCoords.y].rotation + map.getMapRotation()) % 360;
                 if (building && ShopSelectionType[this.cache.json.get('buildings')[building]['shopSelectionType']] == 
                         ShopSelectionType.TILE_AND_BUILDING) {
                     this.tileMapImages[x][y].setTexture(this.getSelectionTextureName(building, rotation));
                 } else {
-                    this.tileMapImages[x][y].setTexture(map.getMap()[x][y].tile);
+                    this.tileMapImages[x][y].setTexture(map.getMap()[mapCoords.x][mapCoords.y].tile);
                     if (building) {
                         this.buildingImages[x][y].setTexture(this.getSelectionTextureName(building, rotation));
                         this.buildingImages[x][y].setVisible(true);
@@ -137,6 +154,40 @@ export class MapScene extends Phaser.Scene {
                     }
                 }
             }
+        }
+    }
+
+    displayToMapCoordinates(displayX, displayY) {
+        if (!this.areTileCoordinatesValid(displayX, displayY)) {
+            return new Phaser.Math.Vector2(-1, -1);
+        }
+        switch(map.getMapRotation()) {
+            case 90:
+                return this.tileMapR90[displayX][displayY];
+            case 180:
+                return this.tileMapR180[displayX][displayY];
+            case 270:
+                return this.tileMapR270[displayX][displayY];
+            case 0:
+            default:
+                return new Phaser.Math.Vector2(displayX, displayY);
+        }
+    }
+
+    mapToDisplayCoordinates(mapX, mapY) {
+        if (!this.areTileCoordinatesValid(mapX, mapY)) {
+            return new Phaser.Math.Vector2(-1, -1);
+        }
+        switch(map.getMapRotation()) {
+            case 90:
+                return this.tileMapR270[mapX][mapY];
+            case 180:
+                return this.tileMapR180[mapX][mapY];
+            case 270:
+                return this.tileMapR90[mapX][mapY];
+            case 0:
+            default:
+                return new Phaser.Math.Vector2(mapX, mapY);
         }
     }
 
@@ -162,13 +213,14 @@ export class MapScene extends Phaser.Scene {
             let x = pointer.x;
             let y = pointer.y;
             let clickCoords = this.cameras.main.getWorldPoint(x, y);
-            let tile = this.worldCoordinatesToTileCoordinates(clickCoords.x, clickCoords.y);
-            if (this.currentShopSelection && this.areTileCoordinatesValid(tile.x, tile.y) &&
-                    map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
+            let displayTile = this.worldCoordinatesToDisplayTileCoordinates(clickCoords.x, clickCoords.y);
+            let mapCoords = this.displayToMapCoordinates(displayTile.x, displayTile.y);
+            if (this.currentShopSelection && this.areTileCoordinatesValid(mapCoords.x, mapCoords.y) &&
+                    map.canPlaceShopSelection(this.currentShopSelection, mapCoords.x, mapCoords.y)) {
                 // Build the shop selection if enough cash
                 if (map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, 
-                        tile.x, tile.y) <= state.getCurrentCash()) {
-                    this.placeShopSelection(tile.x, tile.y);
+                        mapCoords.x, mapCoords.y) <= state.getCurrentCash()) {
+                    this.placeShopSelection(mapCoords.x, mapCoords.y);
                 } else {
                     // Print message for not enough cash. Should only happen for demolition,
                     // as other options will not be selectable in the shop when you can't afford them.
@@ -197,22 +249,27 @@ export class MapScene extends Phaser.Scene {
         const selection = this.currentShopSelection;
         let price = map.getShopSelectionPrice(this.cache.json, selection, x, y);
         // Update the tileMap
-        map.addShopSelectionToMap(selection, tileMap, x, y, this.shopSelectionRotation);
+        let realRotation = this.shopSelectionRotation - map.getMapRotation();
+        if (realRotation < 0) {
+            realRotation += 360;
+        }
+        map.addShopSelectionToMap(selection, tileMap, x, y, realRotation);
 
         // Update cash per second and click cash
         state.updateCashRates(this.cache.json, map.getMap());
 
         // Update displayed sprites
+        let displayCoords = this.mapToDisplayCoordinates(x, y);
         if (selection.selectionType == ShopSelectionType.DEMOLITION) {
-            this.buildingImages[x][y].setVisible(false);
-            this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
-            this.tileMapImages[x][y].alpha = 1;
+            this.buildingImages[displayCoords.x][displayCoords.y].setVisible(false);
+            this.tileMapImages[displayCoords.x][displayCoords.y].setTexture(tileMap[x][y].tile);
+            this.tileMapImages[displayCoords.x][displayCoords.y].alpha = 1;
         } else if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
-            this.tileMapImages[x][y].setTexture(this.getSelectionTextureName(selection.getName(), this.shopSelectionRotation));
-            this.tileMapImages[x][y].alpha = 1;
+            this.tileMapImages[displayCoords.x][displayCoords.y].setTexture(this.getSelectionTextureName(selection.getName(), this.shopSelectionRotation));
+            this.tileMapImages[displayCoords.x][displayCoords.y].alpha = 1;
         } else {
-            this.buildingImages[x][y].setVisible(true);
-            this.buildingImages[x][y].setTexture(this.getSelectionTextureName(selection.getName(), this.shopSelectionRotation));
+            this.buildingImages[displayCoords.x][displayCoords.y].setVisible(true);
+            this.buildingImages[displayCoords.x][displayCoords.y].setTexture(this.getSelectionTextureName(selection.getName(), this.shopSelectionRotation));
         }
         // Reset tile alpha to default on previous hovered tile
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
@@ -247,32 +304,32 @@ export class MapScene extends Phaser.Scene {
     }
 
     // Update building and tile preview values
-    updatePreview(x, y, showExistingBuildingRates) {
-        let worldCoords = this.tileCoordinatesToWorldCoordinates(x, y);
+    updatePreview(tileX, tileY, displayX, displayY, showExistingBuildingRates) {
+        let worldCoords = this.displayTileCoordinatesToWorldCoordinates(displayX, displayY);
         let previewCoords = this.worldCoordinatesToCanvasCoordinates(worldCoords.x, worldCoords.y - 150);
         this.tilePreview.setPosition(previewCoords.x, previewCoords.y);
         this.tilePreview.setVisible(true);
 
         // Show rates for whatever already exists on the tile
         if (showExistingBuildingRates) {
-            if (map.getMap()[x][y].building) {
-                let buildingName = map.getMap()[x][y].building;
+            if (map.getMap()[tileX][tileY].building) {
+                let buildingName = map.getMap()[tileX][tileY].building;
                 let shortName = this.cache.json.get('buildings')[buildingName]['shortName'];
                 buildingName = shortName ? shortName : buildingName;
                 // Building values
                 this.updatePreviewTexts(buildingName,
-                    build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), map.getMap(), x, y),
-                    build.getBuildingClickValue(this.cache.json.get('buildings'), map.getMap(), x, y));
+                    build.getBuildingCashGrowthRate(this.cache.json.get('buildings'), map.getMap(), tileX, tileY),
+                    build.getBuildingClickValue(this.cache.json.get('buildings'), map.getMap(), tileX, tileY));
             } else {
                 // Tile values
-                this.updatePreviewTexts(map.getMap()[x][y].tile,
-                    tile.getTileCashGrowthRate(this.cache.json.get('tiles'), map.getMap(), x, y),
-                    tile.getTileClickValue(this.cache.json.get('tiles'), map.getMap(), x, y));
+                this.updatePreviewTexts(map.getMap()[tileX][tileY].tile,
+                    tile.getTileCashGrowthRate(this.cache.json.get('tiles'), map.getMap(), tileX, tileY),
+                    tile.getTileClickValue(this.cache.json.get('tiles'), map.getMap(), tileX, tileY));
             }
         // Showing shop selection rates preview
         } else {
             let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
-            map.addShopSelectionToMap(this.currentShopSelection, mapCopy, x, y, 0);
+            map.addShopSelectionToMap(this.currentShopSelection, mapCopy, tileX, tileY, 0);
             let rates = state.getCashRates(this.cache.json, mapCopy);
             let rateDiffs = {
                 cashGrowthRate: rates['cashGrowthRate'] - state.getCashGrowthRate(),
@@ -280,7 +337,7 @@ export class MapScene extends Phaser.Scene {
             }
             // Preview difference in rates that would result after shop selection is placed
             this.updatePreviewTexts(
-                -1 * map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, this.tileHighlightActiveX, this.tileHighlightActiveY), 
+                -1 * map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, tileX, tileY), 
                 rateDiffs.cashGrowthRate,
                 rateDiffs.clickValue);
         }
@@ -342,10 +399,11 @@ export class MapScene extends Phaser.Scene {
 
     updateTileHighlight() {
         let worldCoords = this.cameras.main.getWorldPoint(this.game.input.mousePointer.x, this.game.input.mousePointer.y);
-        let tile = this.worldCoordinatesToTileCoordinates(worldCoords.x, worldCoords.y);
+        let displayTile = this.worldCoordinatesToDisplayTileCoordinates(worldCoords.x, worldCoords.y);
+        let tile = this.displayToMapCoordinates(displayTile.x, displayTile.y);
 
         // If hovered tile hasn't changed and a shop selection is active, just exit
-        if (tile.x == this.tileHighlightActiveX && tile.y == this.tileHighlightActiveY && this.currentShopSelection) {
+        if (displayTile.x == this.tileHighlightActiveX && displayTile.y == this.tileHighlightActiveY && this.currentShopSelection) {
             return;
         }
 
@@ -356,13 +414,13 @@ export class MapScene extends Phaser.Scene {
 
         // Update hover image/tile image, cash preview, and alpha
         if (this.areTileCoordinatesValid(tile.x, tile.y) && map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
-            this.tileHighlightActiveX = tile.x;
-            this.tileHighlightActiveY = tile.y;
-            let tileCoords = this.tileCoordinatesToWorldCoordinates(tile.x, tile.y);
+            this.tileHighlightActiveX = displayTile.x;
+            this.tileHighlightActiveY = displayTile.y;
+            let tileCoords = this.displayTileCoordinatesToWorldCoordinates(displayTile.x, displayTile.y);
             this.hoverImage.x = tileCoords.x;
             this.hoverImage.y = tileCoords.y;
             this.hoverImage.alpha = hoverImageAlpha;
-            this.updatePreview(tile.x, tile.y, false);
+            this.updatePreview(tile.x, tile.y, displayTile.x, displayTile.y, false);
             // Demolishing existing building
             if (this.currentShopSelection.selectionType == ShopSelectionType.DEMOLITION) {
                 this.hoverImage.setScale(tileScale / 2);
@@ -373,7 +431,7 @@ export class MapScene extends Phaser.Scene {
                 if (this.currentShopSelection.selectionType == ShopSelectionType.BUILDING_ONLY) {
                     this.hoverImage.y += buildingYDiff;
                 } else {
-                    this.tileMapImages[tile.x][tile.y].alpha = 0;
+                    this.tileMapImages[displayTile.x][displayTile.y].alpha = 0;
                 }
             }
         // Hide preview, or show stats for existing building
@@ -381,15 +439,15 @@ export class MapScene extends Phaser.Scene {
             this.tileHighlightActiveX = -1;
             this.tileHighlightActiveY = -1;
             this.hoverImage.alpha = 0;
-            if (this.areTileCoordinatesValid(tile.x, tile.y)) {
-                this.updatePreview(tile.x, tile.y, true);
+            if (this.areTileCoordinatesValid(displayTile.x, displayTile.y)) {
+                this.updatePreview(tile.x, tile.y, displayTile.x, displayTile.y, true);
             } else {
                 this.tilePreview.setVisible(false);
             }
         }
     }
 
-    worldCoordinatesToTileCoordinates(x, y) {
+    worldCoordinatesToDisplayTileCoordinates(x, y) {
         let xDiff = x - this.mapOriginX;
         let yDiff = (this.mapOriginY - blockImageHeight / 2 + blockImageWidth / 4) - y;
         // Determine if point is between lines for x=0, x=1, x=2, etc. Line for x=0: x/2 + y = -(blockImageWidth / 4)
@@ -399,7 +457,7 @@ export class MapScene extends Phaser.Scene {
         return new Phaser.Math.Vector2(tileX, tileY);
     }
 
-    tileCoordinatesToWorldCoordinates(tileX, tileY) {
+    displayTileCoordinatesToWorldCoordinates(tileX, tileY) {
         let xDiff = (tileX - tileY) * blockImageWidth / 2;
         let yDiff = (tileX + tileY) * -blockImageWidth / 4;
         return new Phaser.Math.Vector2(this.mapOriginX + xDiff, this.mapOriginY + yDiff);

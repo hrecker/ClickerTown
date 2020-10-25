@@ -1,28 +1,33 @@
-import { setMap, getMap, initializeMap } from './MapState';
+import { setMap, getMap, initializeMap, getMapRotation, setMapRotation } from './MapState';
 import * as state from './CashState';
 
 const mapKey = 'map';
 const cashKey = 'currentCash';
+const mapRotationKey = 'mapRotation';
 let gameResetCallbacks = [];
 
 export function saveGame() {
     localStorage.setItem(mapKey, JSON.stringify(getMap()));
     localStorage.setItem(cashKey, state.getCurrentCashDecicents());
+    localStorage.setItem(mapRotationKey, getMapRotation());
 }
 
 export function initializeGame(jsonCache, forceReinitialize) {
     let savedMap = localStorage.getItem(mapKey);
     let savedCash = localStorage.getItem(cashKey);
+    let savedRotation = localStorage.getItem(mapRotationKey) ?? 0;
     if (savedMap && savedCash != null && !forceReinitialize) {
         // Load saved values
         setMap(JSON.parse(savedMap));
         state.setCurrentCashDecicents(savedCash);
         state.updateCashRates(jsonCache, getMap());
+        setMapRotation(Number(savedRotation));
     } else {
         // Initialize base values
         state.setCurrentCash(jsonCache.get('initials')['startingCash']);
         state.setCashGrowthRate(jsonCache.get('initials')['startingGrowthRate']);
         state.setClickCashValue(jsonCache.get('initials')['startingClickValue']);
+        setMapRotation(0);
         // Initialize tile map
         initializeMap(jsonCache.get('initials')['mapWidth'], jsonCache.get('initials')['mapHeight']);
     }

@@ -30,6 +30,10 @@ export class LoadingScene extends Phaser.Scene {
         this.load.image('confirmButtonDown', 'assets/sprites/ui/confirm_button_down.png');
         this.load.image('cancelButton', 'assets/sprites/ui/cancel_button.png');
         this.load.image('cancelButtonDown', 'assets/sprites/ui/cancel_button_down.png');
+        this.load.image('rotateClockwiseButton', 'assets/sprites/ui/rotate_clockwise_button.png');
+        this.load.image('rotateClockwiseButtonDown', 'assets/sprites/ui/rotate_clockwise_button_down.png');
+        this.load.image('rotateCounterclockwiseButton', 'assets/sprites/ui/rotate_counterclockwise_button.png');
+        this.load.image('rotateCounterclockwiseButtonDown', 'assets/sprites/ui/rotate_counterclockwise_button_down.png');
         this.load.image('slider', 'assets/sprites/ui/grey_sliderVertical.png');
         this.load.image('greyPanel', 'assets/sprites/ui/grey_panel.png');
     }

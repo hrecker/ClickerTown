@@ -6,6 +6,8 @@ import { ShopSelectionType } from '../state/UIState';
 // "rotation": clockwise rotation of the building in this location. 0 is the default. Possible values are 0, 90, 180, 270
 let map;
 let demolitionCostFraction;
+let mapRotation;
+let mapRotationCallbacks = [];
 
 export function setDemolitionCostFraction(costFraction) {
     demolitionCostFraction = costFraction;
@@ -32,6 +34,34 @@ export function setMap(newMap) {
 
 export function getMap() {
     return map;
+}
+
+export function rotateClockwise() {
+    setMapRotation((mapRotation + 90) % 360);
+}
+export function rotateCounterclockwise() {
+    let rot = (mapRotation - 90) % 360;
+    if (rot < 0) {
+        rot += 360;
+    }
+    setMapRotation(rot);
+}
+
+export function setMapRotation(rotation) {
+    mapRotation = rotation;
+    mapRotationCallbacks.forEach(callback => 
+        callback.callback(mapRotation, callback.scene));
+}
+
+export function getMapRotation() {
+    return mapRotation;
+}
+
+export function addMapRotationListener(callback, scene) {
+    mapRotationCallbacks.push({ 
+        callback: callback,
+        scene: scene
+    });
 }
 
 export function areCoordinatesValid(x, y) {

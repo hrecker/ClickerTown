@@ -1,4 +1,5 @@
 import * as state from '../state/CashState';
+import { rotateClockwise, rotateCounterclockwise } from '../state/MapState';
 import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
 import { formatCash, isBlank, formatPhaserCashText } from '../util/Util';
@@ -62,10 +63,18 @@ export class UIScene extends Phaser.Scene {
         this.resetButton = this.add.image(5, 5, 'resetButton');
         this.resetButton.setOrigin(0, 0);
         this.configureButton("resetButton");
-        this.createButtonShadow('saveButton', 60, 5, 2).setOrigin(0, 0);
-        this.saveButton = this.add.image(60, 5, 'saveButton');
+        this.createButtonShadow('saveButton', 5, 60, 2).setOrigin(0, 0);
+        this.saveButton = this.add.image(5, 60, 'saveButton');
         this.saveButton.setOrigin(0, 0);
         this.configureButton("saveButton");
+        this.createButtonShadow('rotateClockwiseButton', 5, 115, 2).setOrigin(0, 0);
+        this.rotateClockwiseButton = this.add.image(5, 115, 'rotateClockwiseButton');
+        this.rotateClockwiseButton.setOrigin(0, 0);
+        this.configureButton("rotateClockwiseButton");
+        this.createButtonShadow('rotateCounterclockwiseButton', 5, 170, 2).setOrigin(0, 0);
+        this.rotateCounterclockwiseButton = this.add.image(5, 170, 'rotateCounterclockwiseButton');
+        this.rotateCounterclockwiseButton.setOrigin(0, 0);
+        this.configureButton("rotateCounterclockwiseButton");
 
         // Status message text
         this.statusMessage = this.add.text(5, this.game.renderer.height - 5, "", subtitleTextStyle);
@@ -383,6 +392,12 @@ export class UIScene extends Phaser.Scene {
             case "cancelButton":
                 this.confirmationPopup.setVisible(false);
                 setInDialog(false);
+                break;
+            case "rotateClockwiseButton":
+                rotateClockwise();
+                break;
+            case "rotateCounterclockwiseButton":
+                rotateCounterclockwise();
                 break;
         }
     }
