@@ -86,6 +86,7 @@ export class MapScene extends Phaser.Scene {
             maxSpeed: 1.0
         };
         this.controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
+        this.cameras.main.setZoom(0.85);
 
         // Cash rate preview for new buildings, and info on existing buildings/tiles
         this.createPreview();
@@ -204,23 +205,36 @@ export class MapScene extends Phaser.Scene {
         if (isInDialog()) {
             return;
         }
+        let x = pointer.x;
+        let y = pointer.y;
+        let clickCoords = this.cameras.main.getWorldPoint(x, y);
+        let displayTile = this.worldCoordinatesToDisplayTileCoordinates(clickCoords.x, clickCoords.y);
+        let mapTile = this.displayToMapCoordinates(displayTile.x, displayTile.y);
         if (pointer.rightButtonReleased()) {
             if (this.currentShopSelection) {
                 this.shopSelectionRotation = (90 + this.shopSelectionRotation) % 360;
                 this.hoverImage.setTexture(this.getSelectionTextureName(this.currentShopSelection.getName(), this.shopSelectionRotation));
+            } else if(this.areTileCoordinatesValid(mapTile.x, mapTile.y)) {
+                // Rotate existing building
+                let building = map.getMap()[mapTile.x][mapTile.y].building;
+                if (building) {
+                    let newRotation = (map.getMap()[mapTile.x][mapTile.y].rotation + 90) % 360;
+                    map.getMap()[mapTile.x][mapTile.y].rotation = newRotation;
+                    let displayRotation = (newRotation + map.getMapRotation()) % 360;
+                    if (ShopSelectionType[this.cache.json.get('buildings')[building]['shopSelectionType']] != ShopSelectionType.BUILDING_ONLY) {
+                        this.tileMapImages[displayTile.x][displayTile.y].setTexture(this.getSelectionTextureName(building, displayRotation));
+                    } else {
+                        this.buildingImages[displayTile.x][displayTile.y].setTexture(this.getSelectionTextureName(building, displayRotation));
+                    }
+                }
             }
         } else {
-            let x = pointer.x;
-            let y = pointer.y;
-            let clickCoords = this.cameras.main.getWorldPoint(x, y);
-            let displayTile = this.worldCoordinatesToDisplayTileCoordinates(clickCoords.x, clickCoords.y);
-            let mapCoords = this.displayToMapCoordinates(displayTile.x, displayTile.y);
-            if (this.currentShopSelection && this.areTileCoordinatesValid(mapCoords.x, mapCoords.y) &&
-                    map.canPlaceShopSelection(this.currentShopSelection, mapCoords.x, mapCoords.y)) {
+            if (this.currentShopSelection && this.areTileCoordinatesValid(mapTile.x, mapTile.y) &&
+                    map.canPlaceShopSelection(this.currentShopSelection, mapTile.x, mapTile.y)) {
                 // Build the shop selection if enough cash
                 if (map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, 
-                        mapCoords.x, mapCoords.y) <= state.getCurrentCash()) {
-                    this.placeShopSelection(mapCoords.x, mapCoords.y);
+                        mapTile.x, mapTile.y) <= state.getCurrentCash()) {
+                    this.placeShopSelection(mapTile.x, mapTile.y);
                 } else {
                     // Print message for not enough cash. Should only happen for demolition,
                     // as other options will not be selectable in the shop when you can't afford them.
