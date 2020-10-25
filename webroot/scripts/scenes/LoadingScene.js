@@ -11,6 +11,11 @@ export class LoadingScene extends Phaser.Scene {
     }
 
     preload() {
+        // Loading message
+        this.cameras.main.setBackgroundColor("#4287f5");
+        this.add.text(this.game.renderer.width / 2, this.game.renderer.height / 2, "Loading...",
+            { font: "bold 48px Verdana" }).setOrigin(0.5, 0.5);
+
         // Load initial json values
         this.load.json('buildings', 'assets/data/buildings.json');
         this.load.json('initials', 'assets/data/initials.json');
@@ -36,6 +41,9 @@ export class LoadingScene extends Phaser.Scene {
         this.load.image('rotateCounterclockwiseButtonDown', 'assets/sprites/ui/rotate_counterclockwise_button_down.png');
         this.load.image('slider', 'assets/sprites/ui/grey_sliderVertical.png');
         this.load.image('greyPanel', 'assets/sprites/ui/grey_panel.png');
+        this.load.image('titleImage', 'assets/sprites/ui/title_image.png');
+        this.load.image('playButton', 'assets/sprites/ui/play_button.png');
+        this.load.image('playButtonDown', 'assets/sprites/ui/play_button_down.png');
     }
 
     create() {
@@ -71,8 +79,7 @@ export class LoadingScene extends Phaser.Scene {
         this.load.start();
         this.load.once('complete', () => {
             this.scene.start("BackgroundScene")
-                      .start("MapScene")
-                      .start("UIScene")
+                      .start("TitleScene")
                       .stop();
         });
     }

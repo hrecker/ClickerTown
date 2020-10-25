@@ -1,6 +1,7 @@
 /** @type {import("../../typings/phaser")}*/
 
 import { LoadingScene } from "./scenes/LoadingScene";
+import { TitleScene } from "./scenes/TitleScene";
 import { BackgroundScene } from "./scenes/BackgroundScene";
 import { MapScene } from "./scenes/MapScene";
 import { UIScene } from "./scenes/UIScene";
@@ -20,6 +21,7 @@ var config = {
     scene: [
         LoadingScene,
         BackgroundScene,
+        TitleScene,
         MapScene,
         UIScene
     ]
