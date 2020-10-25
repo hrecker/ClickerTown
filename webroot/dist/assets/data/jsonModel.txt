@@ -3,7 +3,10 @@ Buildings
 - shortName: short name of the building used in some UI elements
 - tileName: name of the tile that gets placed along with the building, if there is one
 - description: description displayed in shop tooltip
-- sprite: image file name for the building, in assets/sprites/buildings/
+- sprite: image file name for the building, in assets/sprites/buildings/. This is the default rotation, shown in the shop.
+- sprite90: image file name, when rotated 90 degrees clockwise
+- sprite180: image file name, when rotated 180 degrees clockwise
+- sprite270: image file name, when rotated 270 degrees clockwise
 - cost: cost of placing the building in dollars
 - shopSelectionType: what gets placed when you purchase the building
     - BUILDING_ONLY: just the building

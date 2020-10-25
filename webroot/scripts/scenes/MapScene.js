@@ -59,12 +59,14 @@ export class MapScene extends Phaser.Scene {
             return 1 - t;
         });
 
-        // Click handler
+        // Click handlers
+        this.input.mouse.disableContextMenu();
         this.input.on("pointerup", this.handleClick, this);
         
         // Listeners
         addShopSelectionListener(this.shopSelectionListener, this);
         addGameResetListener(this.gameResetListener, this);
+        this.shopSelectionRotation = 0;
 
         // Camera control
         let originalX = this.cameras.main.centerX;
@@ -121,13 +123,14 @@ export class MapScene extends Phaser.Scene {
         for (let x = this.mapWidth - 1; x >= 0; x--) {
             for (let y = this.mapHeight - 1; y >= 0; y--) {
                 let building = map.getMap()[x][y].building;
+                let rotation = map.getMap()[x][y].rotation;
                 if (building && ShopSelectionType[this.cache.json.get('buildings')[building]['shopSelectionType']] == 
                         ShopSelectionType.TILE_AND_BUILDING) {
-                    this.tileMapImages[x][y].setTexture(building);
+                    this.tileMapImages[x][y].setTexture(this.getSelectionTextureName(building, rotation));
                 } else {
                     this.tileMapImages[x][y].setTexture(map.getMap()[x][y].tile);
                     if (building) {
-                        this.buildingImages[x][y].setTexture(building);
+                        this.buildingImages[x][y].setTexture(this.getSelectionTextureName(building, rotation));
                         this.buildingImages[x][y].setVisible(true);
                     } else {
                         this.buildingImages[x][y].setVisible(false);
@@ -137,33 +140,51 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
-    handleClick(event) {
+    getSelectionTextureName(selection, rotation) {
+        let textureName = selection + rotation;
+        if (rotation == 0 || !this.textures.exists(textureName)) {
+            return selection;
+        } else {
+            return textureName;
+        }
+    }
+
+    handleClick(pointer) {
         if (isInDialog()) {
             return;
         }
-
-        let clickCoords = this.cameras.main.getWorldPoint(event.upX, event.upY);
-        let tile = this.worldCoordinatesToTileCoordinates(clickCoords.x, clickCoords.y);
-        if (this.currentShopSelection && this.areTileCoordinatesValid(tile.x, tile.y) &&
-                map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
-            // Build the shop selection if enough cash
-            if (map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, 
-                    tile.x, tile.y) <= state.getCurrentCash()) {
-                this.placeShopSelection(tile.x, tile.y);
-            } else {
-                // Print message for not enough cash. Should only happen for demolition,
-                // as other options will not be selectable in the shop when you can't afford them.
-                let coords = this.worldCoordinatesToCanvasCoordinates(clickCoords.x, clickCoords.y - blockImageHeight);
-                this.addTemporaryText("Not enough cash!", "#000", 24, coords.x, coords.y);
+        if (pointer.rightButtonReleased()) {
+            if (this.currentShopSelection) {
+                this.shopSelectionRotation = (90 + this.shopSelectionRotation) % 360;
+                this.hoverImage.setTexture(this.getSelectionTextureName(this.currentShopSelection.getName(), this.shopSelectionRotation));
             }
         } else {
-            // Otherwise add cash
-            this.addClickCash(event);
+            let x = pointer.x;
+            let y = pointer.y;
+            let clickCoords = this.cameras.main.getWorldPoint(x, y);
+            let tile = this.worldCoordinatesToTileCoordinates(clickCoords.x, clickCoords.y);
+            if (this.currentShopSelection && this.areTileCoordinatesValid(tile.x, tile.y) &&
+                    map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
+                // Build the shop selection if enough cash
+                if (map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, 
+                        tile.x, tile.y) <= state.getCurrentCash()) {
+                    this.placeShopSelection(tile.x, tile.y);
+                } else {
+                    // Print message for not enough cash. Should only happen for demolition,
+                    // as other options will not be selectable in the shop when you can't afford them.
+                    let coords = this.worldCoordinatesToCanvasCoordinates(clickCoords.x, clickCoords.y - blockImageHeight);
+                    this.addTemporaryText("Not enough cash!", "#000", 24, coords.x, coords.y);
+                }
+            } else {
+                // Otherwise add cash
+                this.addClickCash(x, y);
+            }
         }
     }
 
     shopSelectionListener(shopSelection, scene) {
         scene.currentShopSelection = shopSelection;
+        scene.shopSelectionRotation = 0;
         if (shopSelection != null) {
             scene.hoverImage.setTexture(shopSelection.getName());
         } else {
@@ -176,7 +197,7 @@ export class MapScene extends Phaser.Scene {
         const selection = this.currentShopSelection;
         let price = map.getShopSelectionPrice(this.cache.json, selection, x, y);
         // Update the tileMap
-        map.addShopSelectionToMap(selection, tileMap, x, y);
+        map.addShopSelectionToMap(selection, tileMap, x, y, this.shopSelectionRotation);
 
         // Update cash per second and click cash
         state.updateCashRates(this.cache.json, map.getMap());
@@ -187,11 +208,11 @@ export class MapScene extends Phaser.Scene {
             this.tileMapImages[x][y].setTexture(tileMap[x][y].tile);
             this.tileMapImages[x][y].alpha = 1;
         } else if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
-            this.tileMapImages[x][y].setTexture(selection.getName());
+            this.tileMapImages[x][y].setTexture(this.getSelectionTextureName(selection.getName(), this.shopSelectionRotation));
             this.tileMapImages[x][y].alpha = 1;
         } else {
             this.buildingImages[x][y].setVisible(true);
-            this.buildingImages[x][y].setTexture(selection.getName());
+            this.buildingImages[x][y].setTexture(this.getSelectionTextureName(selection.getName(), this.shopSelectionRotation));
         }
         // Reset tile alpha to default on previous hovered tile
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
@@ -251,7 +272,7 @@ export class MapScene extends Phaser.Scene {
         // Showing shop selection rates preview
         } else {
             let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
-            map.addShopSelectionToMap(this.currentShopSelection, mapCopy, x, y);
+            map.addShopSelectionToMap(this.currentShopSelection, mapCopy, x, y, 0);
             let rates = state.getCashRates(this.cache.json, mapCopy);
             let rateDiffs = {
                 cashGrowthRate: rates['cashGrowthRate'] - state.getCashGrowthRate(),
@@ -284,12 +305,12 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
-    addClickCash(event) {
+    addClickCash(x, y) {
         // Always give at least one cent per click, just to be merciful
         let clickCash = Math.max(state.getClickCashValue(), 0.01);	
         this.addTemporaryText(formatCash(clickCash, false),	
-            "#ffffff", 48, event.upX, event.upY);
-        this.cashEmitter.setPosition(event.upX, event.upY);
+            "#ffffff", 48, x, y);
+        this.cashEmitter.setPosition(x, y);
         this.cashEmitter.explode();
         state.addCurrentCash(clickCash);
     }

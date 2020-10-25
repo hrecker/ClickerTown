@@ -45,6 +45,15 @@ export class LoadingScene extends Phaser.Scene {
         for (let buildingName in this.cache.json.get('buildings')) {
             let building = this.cache.json.get('buildings')[buildingName];
             this.load.image(building['name'], 'assets/sprites/buildings/' + building['sprite']);
+            if (building['sprite90']) {
+                this.load.image(building['name'] + "90", 'assets/sprites/buildings/' + building['sprite90']);
+            }
+            if (building['sprite180']) {
+                this.load.image(building['name'] + "180", 'assets/sprites/buildings/' + building['sprite180']);
+            }
+            if (building['sprite270']) {
+                this.load.image(building['name'] + "270", 'assets/sprites/buildings/' + building['sprite270']);
+            }
         }
 
         // Tile sprites

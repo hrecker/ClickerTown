@@ -3,6 +3,7 @@ import { ShopSelectionType } from '../state/UIState';
 // Map is a 2D array of objects containing up to two properties	
 // "tile": name of the tile in this location	
 // "building": name of the building in this location, or null if there is none
+// "rotation": clockwise rotation of the building in this location. 0 is the default. Possible values are 0, 90, 180, 270
 let map;
 let demolitionCostFraction;
 
@@ -17,7 +18,8 @@ export function initializeMap(width, height) {
         for (let y = 0; y < height; y++) {
             map[x][y] = { 
                 "tile": 'Dirt',
-                "building": null
+                "building": null,
+                "rotation": 0
             };
         }
     }
@@ -61,12 +63,13 @@ export function getShopSelectionPrice(jsonCache, selection, targetX, targetY) {
     }
 }
 
-export function addShopSelectionToMap(selection, tileMap, x, y) {
+export function addShopSelectionToMap(selection, tileMap, x, y, rotation) {
     if (selection.selectionType == ShopSelectionType.DEMOLITION) {
         tileMap[x][y].building = null;
     } else {
         if (selection.selectionType != ShopSelectionType.TILE_ONLY) {
             tileMap[x][y].building = selection.buildingName;
+            tileMap[x][y].rotation = rotation;
         } 
         if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
             tileMap[x][y].tile = selection.tileName;
