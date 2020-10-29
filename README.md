@@ -12,9 +12,9 @@ Buildings can be rotated with right click (for aesthetic reasons). The camera is
 This repository is structured to serve the game locally with [parcel](https://parceljs.org/getting_started.html). Start parcel pointing at the webroot/index.html entry file.
 
 # Credits
-Sound effects and sprites from the [Kenney Asset Pack (version 41)](www.kenney.nl).
+Sound effects and sprites from the [Kenney Asset Pack (version 41)](https://www.kenney.nl).
 
-Music by [Eric Matyas](www.soundimage.org) ("Puzzle Dreams").
+Music by [Eric Matyas](https://www.soundimage.org) ("Puzzle Dreams").
 
 Bomb image from https://icon-library.com/icon/bomb-icon-24.html
 
