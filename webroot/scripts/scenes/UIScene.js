@@ -1,5 +1,5 @@
 import * as state from '../state/CashState';
-import { rotateClockwise, rotateCounterclockwise } from '../state/MapState';
+import { rotateClockwise } from '../state/MapState';
 import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
 import { formatCash, isBlank, formatPhaserCashText } from '../util/Util';
@@ -427,9 +427,6 @@ export class UIScene extends Phaser.Scene {
                 break;
             case "rotateClockwiseButton":
                 rotateClockwise();
-                break;
-            case "rotateCounterclockwiseButton":
-                rotateCounterclockwise();
                 break;
             case "musicControlButton":
                 // Toggle music

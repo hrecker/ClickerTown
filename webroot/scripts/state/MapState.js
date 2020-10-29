@@ -39,13 +39,6 @@ export function getMap() {
 export function rotateClockwise() {
     setMapRotation((mapRotation + 90) % 360);
 }
-export function rotateCounterclockwise() {
-    let rot = (mapRotation - 90) % 360;
-    if (rot < 0) {
-        rot += 360;
-    }
-    setMapRotation(rot);
-}
 
 export function setMapRotation(rotation) {
     mapRotation = rotation;

@@ -212,14 +212,10 @@ export class MapScene extends Phaser.Scene {
         let displayTile = this.worldCoordinatesToDisplayTileCoordinates(clickCoords.x, clickCoords.y);
         let mapTile = this.displayToMapCoordinates(displayTile.x, displayTile.y);
         if (pointer.rightButtonReleased()) {
-            if (this.currentShopSelection) {
-                this.shopSelectionRotation = (90 + this.shopSelectionRotation) % 360;
-                this.hoverImage.setTexture(this.getSelectionTextureName(this.currentShopSelection.getName(), this.shopSelectionRotation));
-                audio.playSound(this, "rotate", 0.65);
-            } else if(this.areTileCoordinatesValid(mapTile.x, mapTile.y)) {
-                // Rotate existing building
-                let building = map.getMap()[mapTile.x][mapTile.y].building;
-                if (building) {
+            if (this.areTileCoordinatesValid(mapTile.x, mapTile.y)) {
+                if(map.getMap()[mapTile.x][mapTile.y].building) {
+                    // Rotate existing building
+                    let building = map.getMap()[mapTile.x][mapTile.y].building;
                     let newRotation = (map.getMap()[mapTile.x][mapTile.y].rotation + 90) % 360;
                     map.getMap()[mapTile.x][mapTile.y].rotation = newRotation;
                     let displayRotation = (newRotation + map.getMapRotation()) % 360;
@@ -228,6 +224,10 @@ export class MapScene extends Phaser.Scene {
                     } else {
                         this.buildingImages[displayTile.x][displayTile.y].setTexture(this.getSelectionTextureName(building, displayRotation));
                     }
+                    audio.playSound(this, "rotate", 0.65);
+                } else if(this.currentShopSelection) {
+                    this.shopSelectionRotation = (90 + this.shopSelectionRotation) % 360;
+                    this.hoverImage.setTexture(this.getSelectionTextureName(this.currentShopSelection.getName(), this.shopSelectionRotation));
                     audio.playSound(this, "rotate", 0.65);
                 }
             }
