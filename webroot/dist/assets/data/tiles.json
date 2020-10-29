@@ -19,7 +19,7 @@
     },
     "Grass": {
         "name": "Grass",
-        "description": "+$0.10/second for each adjacent Grass tile",
+        "description": "+$0.10/second for each adjacent Grass",
         "sprite": "landscapeTiles_067.png",
         "cost": 25,
         "baseCashGrowthRate": 0.1,
