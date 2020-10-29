@@ -19,7 +19,7 @@
     },
     "Grass": {
         "name": "Grass",
-        "description": "+0.1 growth rate for each adjacent grass tile",
+        "description": "+$0.10/second for each adjacent Grass tile",
         "sprite": "landscapeTiles_067.png",
         "cost": 25,
         "baseCashGrowthRate": 0.1,
@@ -28,7 +28,7 @@
     },
     "Sand": {
         "name": "Sand",
-        "description": "+0.5 growth rate on when located the edge of the map",
+        "description": "+$0.50/second when located on the edge of the map",
         "sprite": "landscapeTiles_059.png",
         "cost": 50,
         "baseCashGrowthRate": 0,
