@@ -1,12 +1,14 @@
 import { getRandomInt } from '../util/Util';
+import { isMusicEnabled, addMusicEnabledListener } from '../state/AudioState';
 
 const cloudInitialX = -100;
 const cloudDeleteTime = 60000;
 const minCloudSpeed = 50;
 const maxCloudSpeed = 125;
 const cloudChance = 0.5;
+const musicVolume = 0.15;
 
-// Add cloud images that scroll across the background left to right
+// Add cloud images that scroll across the background left to right, and play background music
 export class BackgroundScene extends Phaser.Scene {
     constructor() {
         super({
@@ -17,6 +19,22 @@ export class BackgroundScene extends Phaser.Scene {
     create() {
         this.cameras.main.setBackgroundColor("#4287f5");
         this.lastAddedCloud = -1;
+
+        // Music
+        this.bgMusic = this.sound.add('backgroundMusic');
+        this.bgMusic.play({
+            loop: true,
+            volume: this.getMusicVolume()
+        });
+        addMusicEnabledListener(this.musicEnabledListener, this);
+    }
+
+    musicEnabledListener(isMusicEnabled, scene) {
+        scene.bgMusic.setVolume(scene.getMusicVolume());
+    }
+
+    getMusicVolume() {
+        return isMusicEnabled() ? musicVolume : 0;
     }
 
     addRandomCloudImage() {

@@ -1,9 +1,12 @@
 import { setMap, getMap, initializeMap, getMapRotation, setMapRotation } from './MapState';
 import * as state from './CashState';
+import { isMusicEnabled, isSoundEnabled, setMusicEnabled, setSoundEnabled } from './AudioState';
 
 const mapKey = 'map';
 const cashKey = 'currentCash';
 const mapRotationKey = 'mapRotation';
+export const musicEnabledKey = 'musicEnabled';
+export const soundEnabledKey = 'soundEnabled';
 let gameResetCallbacks = [];
 
 export function saveGame() {
@@ -16,12 +19,17 @@ export function initializeGame(jsonCache, forceReinitialize) {
     let savedMap = localStorage.getItem(mapKey);
     let savedCash = localStorage.getItem(cashKey);
     let savedRotation = localStorage.getItem(mapRotationKey) ?? 0;
+    let musicEnabled = localStorage.getItem(musicEnabledKey);
+    let soundEnabled = localStorage.getItem(soundEnabledKey);
     if (savedMap && savedCash != null && !forceReinitialize) {
         // Load saved values
         setMap(JSON.parse(savedMap));
         state.setCurrentCashDecicents(savedCash);
         state.updateCashRates(jsonCache, getMap());
         setMapRotation(Number(savedRotation));
+        // Default to enabling sound/music
+        setMusicEnabled(musicEnabled == 'true' || musicEnabled === null);
+        setSoundEnabled(soundEnabled == 'true' || soundEnabled === null);
     } else {
         // Initialize base values
         state.setCurrentCash(jsonCache.get('initials')['startingCash']);

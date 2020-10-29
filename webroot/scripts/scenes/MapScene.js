@@ -5,6 +5,7 @@ import * as tile from '../model/Tile';
 import { ShopSelectionType, addShopSelectionListener, isInDialog } from '../state/UIState';
 import { addGameResetListener } from '../state/GameState';
 import { formatCash, formatPhaserCashText } from '../util/Util';
+import * as audio from '../state/AudioState';
 
 const tileScale = 1;
 const blockImageHeight = 100 * tileScale;
@@ -214,6 +215,7 @@ export class MapScene extends Phaser.Scene {
             if (this.currentShopSelection) {
                 this.shopSelectionRotation = (90 + this.shopSelectionRotation) % 360;
                 this.hoverImage.setTexture(this.getSelectionTextureName(this.currentShopSelection.getName(), this.shopSelectionRotation));
+                audio.playSound(this, "rotate", 0.65);
             } else if(this.areTileCoordinatesValid(mapTile.x, mapTile.y)) {
                 // Rotate existing building
                 let building = map.getMap()[mapTile.x][mapTile.y].building;
@@ -226,6 +228,7 @@ export class MapScene extends Phaser.Scene {
                     } else {
                         this.buildingImages[displayTile.x][displayTile.y].setTexture(this.getSelectionTextureName(building, displayRotation));
                     }
+                    audio.playSound(this, "rotate", 0.65);
                 }
             }
         } else {
@@ -244,6 +247,7 @@ export class MapScene extends Phaser.Scene {
             } else {
                 // Otherwise add cash
                 this.addClickCash(x, y);
+                audio.playSound(this, "leftClick", 0.75);
             }
         }
     }
@@ -291,6 +295,13 @@ export class MapScene extends Phaser.Scene {
         }
         this.tileHighlightActiveX = -1;
         this.tileHighlightActiveY = -1;
+
+        // Play sound
+        if (selection.selectionType == ShopSelectionType.DEMOLITION) {
+            audio.playSound(this, "demolition", 0.2);
+        } else {
+            audio.playSound(this, "placement", 0.8);
+        }
 
         // Apply cost of placing
         state.addCurrentCash(-1 * price);

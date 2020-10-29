@@ -3,6 +3,7 @@ import { rotateClockwise, rotateCounterclockwise } from '../state/MapState';
 import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
 import { formatCash, isBlank, formatPhaserCashText } from '../util/Util';
+import * as audio from '../state/AudioState';
 
 const imageScale = 0.48;
 const topShopSelectionY = 90;
@@ -57,24 +58,27 @@ export class UIScene extends Phaser.Scene {
 
         const mapOriginX = this.game.renderer.width / 2 - 50;
 
-        // Save and reset buttons
+        // Save, reset, and rotate buttons
         this.selectedButton = null;
         this.createButtonShadow('resetButton', 5, 5, 2).setOrigin(0, 0);
-        this.resetButton = this.add.image(5, 5, 'resetButton');
-        this.resetButton.setOrigin(0, 0);
+        this.resetButton = this.add.image(5, 5, 'resetButton').setOrigin(0, 0);
         this.configureButton("resetButton");
         this.createButtonShadow('saveButton', 5, 60, 2).setOrigin(0, 0);
-        this.saveButton = this.add.image(5, 60, 'saveButton');
-        this.saveButton.setOrigin(0, 0);
+        this.saveButton = this.add.image(5, 60, 'saveButton').setOrigin(0, 0);
         this.configureButton("saveButton");
         this.createButtonShadow('rotateClockwiseButton', 5, 115, 2).setOrigin(0, 0);
-        this.rotateClockwiseButton = this.add.image(5, 115, 'rotateClockwiseButton');
-        this.rotateClockwiseButton.setOrigin(0, 0);
+        this.rotateClockwiseButton = this.add.image(5, 115, 'rotateClockwiseButton').setOrigin(0, 0);
         this.configureButton("rotateClockwiseButton");
-        this.createButtonShadow('rotateCounterclockwiseButton', 5, 170, 2).setOrigin(0, 0);
-        this.rotateCounterclockwiseButton = this.add.image(5, 170, 'rotateCounterclockwiseButton');
-        this.rotateCounterclockwiseButton.setOrigin(0, 0);
-        this.configureButton("rotateCounterclockwiseButton");
+
+        // Audio buttons
+        this.createButtonShadow('musicOnButton', 5, 170, 2).setOrigin(0, 0);
+        this.currentMusicButtonTexture = this.getMusicButtonTexture();
+        this.musicControlButton = this.add.image(5, 170, this.currentMusicButtonTexture).setOrigin(0, 0);
+        this.configureButton("musicControlButton", "currentMusicButtonTexture");
+        this.createButtonShadow('soundOnButton', 5, 225, 2).setOrigin(0, 0);
+        this.currentSoundButtonTexture = this.getSoundButtonTexture();
+        this.soundControlButton = this.add.image(5, 225, this.currentSoundButtonTexture).setOrigin(0, 0);
+        this.configureButton("soundControlButton", "currentSoundButtonTexture");
 
         // Status message text
         this.statusMessage = this.add.text(5, this.game.renderer.height - 5, "", subtitleTextStyle);
@@ -207,6 +211,14 @@ export class UIScene extends Phaser.Scene {
         this.confirmationPopup.setVisible(false);
     }
 
+    getMusicButtonTexture() {
+        return audio.isMusicEnabled() ? "musicOnButton" : "musicOffButton";
+    }
+
+    getSoundButtonTexture() {
+        return audio.isSoundEnabled() ? "soundOnButton" : "soundOffButton";
+    }
+
     // If the game is reset, clear shop selection
     gameResetListener(scene) {
         scene.clearShopSelection();
@@ -223,15 +235,23 @@ export class UIScene extends Phaser.Scene {
             return;
         }
         let newHighlightPosition = this.getSelectionPosition(index);
-        this.shopHighlight.x = newHighlightPosition.x;
-        this.shopHighlight.y = newHighlightPosition.y;
-        this.shopHighlight.setVisible(true);
-        setShopSelection(this.shopItems[index].selection);
+        if (this.shopHighlight.visible && this.shopHighlight.x == newHighlightPosition.x &&
+                this.shopHighlight.y == newHighlightPosition.y) {
+            // Deselect if the same selection is clicked again
+            this.clearShopSelection();
+        } else {
+            this.shopHighlight.x = newHighlightPosition.x;
+            this.shopHighlight.y = newHighlightPosition.y;
+            this.shopHighlight.setVisible(true);
+            setShopSelection(this.shopItems[index].selection);
+            audio.playSound(this, "shopSelect");
+        }
     }
 
     clearShopSelection() {
         this.shopHighlight.setVisible(false);
         setShopSelection(null);
+        audio.playSound(this, "shopDeselect");
     }
 
     updateValidShopSelections(currentCash) {
@@ -239,6 +259,10 @@ export class UIScene extends Phaser.Scene {
             // If the player should be able to select this option then make it active
             if (this.shopItems[i].selection.selectionType == ShopSelectionType.DEMOLITION || this.shopItems[i].selection.getPrice(this.cache.json) <= currentCash) {
                 this.shopItems[i].sprite.alpha = 1;
+                if (!this.shopItems[i].selectionBox.input.enabled) {
+                    // If shop item is unlocking just now, then play a little sound
+                    audio.playSound(this, "shopUnlock", 0.75);
+                }
                 this.shopItems[i].selectionBox.setInteractive();
                 if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
                     this.shopItems[i].priceText.setColor("#ffffff");
@@ -347,21 +371,29 @@ export class UIScene extends Phaser.Scene {
         return buttonShadow;
     }
 
-    configureButton(buttonName) {
+    configureButton(buttonName, textureVarName) {
+        let texture = buttonName;
+        if (textureVarName) {
+            texture = this[textureVarName];
+        }
         this[buttonName].setInteractive();
         this[buttonName].on('pointerout', () => {
-            this[buttonName].setTexture(buttonName); 
+            this[buttonName].setTexture(texture); 
             this.selectedButton = null;
         });
         this[buttonName].on('pointerdown', () => {
-            this[buttonName].setTexture(buttonName + "Down");
+            this[buttonName].setTexture(texture + "Down");
             this.selectedButton = buttonName;
+            audio.playSound(this, 'buttonClick');
         });
         this[buttonName].on('pointerup', () => {
-            this[buttonName].setTexture(buttonName);
             if (this.selectedButton === buttonName) {
                 this.handleButtonClick(this.selectedButton);
             }
+            if (textureVarName) {
+                texture = this[textureVarName];
+            }
+            this[buttonName].setTexture(texture);
             this.selectedButton = null;
         });
     }
@@ -398,6 +430,16 @@ export class UIScene extends Phaser.Scene {
                 break;
             case "rotateCounterclockwiseButton":
                 rotateCounterclockwise();
+                break;
+            case "musicControlButton":
+                // Toggle music
+                audio.setMusicEnabled(!audio.isMusicEnabled());
+                this.currentMusicButtonTexture = this.getMusicButtonTexture();
+                break;
+            case "soundControlButton":
+                // Toggle sound
+                audio.setSoundEnabled(!audio.isSoundEnabled());
+                this.currentSoundButtonTexture = this.getSoundButtonTexture();
                 break;
         }
     }

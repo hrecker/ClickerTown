@@ -37,13 +37,30 @@ export class LoadingScene extends Phaser.Scene {
         this.load.image('cancelButtonDown', 'assets/sprites/ui/cancel_button_down.png');
         this.load.image('rotateClockwiseButton', 'assets/sprites/ui/rotate_clockwise_button.png');
         this.load.image('rotateClockwiseButtonDown', 'assets/sprites/ui/rotate_clockwise_button_down.png');
-        this.load.image('rotateCounterclockwiseButton', 'assets/sprites/ui/rotate_counterclockwise_button.png');
-        this.load.image('rotateCounterclockwiseButtonDown', 'assets/sprites/ui/rotate_counterclockwise_button_down.png');
         this.load.image('slider', 'assets/sprites/ui/grey_sliderVertical.png');
         this.load.image('greyPanel', 'assets/sprites/ui/grey_panel.png');
         this.load.image('titleImage', 'assets/sprites/ui/title_image.png');
         this.load.image('playButton', 'assets/sprites/ui/play_button.png');
         this.load.image('playButtonDown', 'assets/sprites/ui/play_button_down.png');
+        this.load.image('musicOnButton', 'assets/sprites/ui/music_on_button.png');
+        this.load.image('musicOnButtonDown', 'assets/sprites/ui/music_on_button_down.png');
+        this.load.image('musicOffButton', 'assets/sprites/ui/music_off_button.png');
+        this.load.image('musicOffButtonDown', 'assets/sprites/ui/music_off_button_down.png');
+        this.load.image('soundOnButton', 'assets/sprites/ui/sound_on_button.png');
+        this.load.image('soundOnButtonDown', 'assets/sprites/ui/sound_on_button_down.png');
+        this.load.image('soundOffButton', 'assets/sprites/ui/sound_off_button.png');
+        this.load.image('soundOffButtonDown', 'assets/sprites/ui/sound_off_button_down.png');
+
+        // Load audio
+        this.load.audio('backgroundMusic', 'assets/sound/music/Puzzle-Dreams.mp3');
+        this.load.audio('buttonClick', 'assets/sound/sfx/button_click.ogg');
+        this.load.audio('demolition', 'assets/sound/sfx/demolition.ogg');
+        this.load.audio('leftClick', 'assets/sound/sfx/left_click.ogg');
+        this.load.audio('placement', 'assets/sound/sfx/placement.ogg');
+        this.load.audio('rotate', 'assets/sound/sfx/rotate.ogg');
+        this.load.audio('shopDeselect', 'assets/sound/sfx/shop_deselect.ogg');
+        this.load.audio('shopSelect', 'assets/sound/sfx/shop_select.ogg');
+        this.load.audio('shopUnlock', 'assets/sound/sfx/shop_unlock.ogg');
     }
 
     create() {
