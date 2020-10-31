@@ -2,7 +2,7 @@ import { getRandomInt } from '../util/Util';
 import { isMusicEnabled, addMusicEnabledListener } from '../state/AudioState';
 
 const cloudInitialX = -100;
-const cloudDeleteTime = 60000;
+const cloudDeleteTime = 45000;
 const minCloudSpeed = 50;
 const maxCloudSpeed = 125;
 const cloudChance = 0.5;
@@ -56,8 +56,8 @@ export class BackgroundScene extends Phaser.Scene {
         }
         
         let timePassed = now - this.lastAddedCloud;
-        // Chance to add a cloud every second
-        if (timePassed >= 1000) {
+        // Chance to add a cloud every 1.5 seconds
+        if (timePassed >= 1500) {
             if (getRandomInt(0, 100) < cloudChance * 100) {
                 this.addRandomCloudImage();
             }

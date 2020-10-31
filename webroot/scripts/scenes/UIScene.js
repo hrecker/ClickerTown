@@ -39,7 +39,7 @@ export class UIScene extends Phaser.Scene {
         let subtitleTextStyle = JSON.parse(JSON.stringify(titleTextStyle));
         subtitleTextStyle.font = "32px Verdana";
         subtitleTextStyle.shadow.blur = 3;
-        let tooltipTextStyle = { 
+        this.tooltipTextStyle = { 
             font: "14px Verdana",
             fill: "#000000",
             align: "center",
@@ -115,16 +115,21 @@ export class UIScene extends Phaser.Scene {
 
         // Shop selections
         this.shopItems = [];
+        this.shopPrices = [];
         // Demolish
         this.shopItems.push({ selection: new ShopSelection(ShopSelectionType.DEMOLITION, null, null) });
         // Buildings
         for (let buildingName in this.cache.json.get('buildings')) {
             let building = this.cache.json.get('buildings')[buildingName];
-            this.shopItems.push({ selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) });
+            let newItem = { selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) };
+            this.shopItems.push(newItem);
+            this.shopPrices.push(newItem['selection'].getPrice(this.cache.json));
         }
         // Tiles
         for (let tileName in this.cache.json.get('tiles')) {
-            this.shopItems.push({ selection: new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null) });
+            let newItem = { selection: new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null) };
+            this.shopItems.push(newItem);
+            this.shopPrices.push(newItem['selection'].getPrice(this.cache.json));
         }
 
         for (let i = 0; i < this.shopItems.length; i++) {
@@ -134,8 +139,13 @@ export class UIScene extends Phaser.Scene {
             this.shopItems[i].sprite = this.add.image(position.x, position.y, this.shopItems[i].selection.getName()).setScale(imageScale);
             this.shopItems[i].selectionBox.setInteractive();
             this.shopItems[i].selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
-            this.shopItems[i].selectionBox.on("pointerover", () => { this.setTooltip(i); });
-            this.shopItems[i].selectionBox.on("pointerout", () => { this.tooltip.setVisible(false); });
+            this.shopItems[i].selectionBox.on("pointerover", () => { 
+                if (isInDialog()) {
+                    return;
+                }
+                this.tooltips[i].setVisible(true);
+            });
+            this.shopItems[i].selectionBox.on("pointerout", () => { this.tooltips[i].setVisible(false); });
             if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
                 this.add.rectangle(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4,
                     selectionBoxSize + 3, selectionBoxSize / 4 + 1, 0x000000).setOrigin(0).setAlpha(0.5);
@@ -154,30 +164,9 @@ export class UIScene extends Phaser.Scene {
         this.clearShopSelection();
         this.updateValidShopSelections(state.getCurrentCash());
 
-        // Tooltip
-        this.tooltipPanel = this.add.nineslice(0, 0, 0, 0, 'greyPanel', 7).setOrigin(1, 0);
-        this.tooltipTitle = this.add.text(0, 0, "", { ...tooltipTextStyle, font: "18px Verdana" }).setOrigin(0.5, 0);
-        this.tooltipPrice = this.add.text(0, 0, "", { ...tooltipTextStyle, font: "16px Verdana" }).setOrigin(0.5, 0);
-        this.tooltipGrowthRate = this.add.text(0, 0, "", { ...tooltipTextStyle, font: "16px Verdana" }).setOrigin(0.5, 0);
-        this.tooltipClickValue = this.add.text(0, 0, "", { ...tooltipTextStyle, font: "16px Verdana" }).setOrigin(0.5, 0);
-        this.tooltipDescription = this.add.text(0, 0, "", tooltipTextStyle).setOrigin(0.5, 0);
-        this.tooltipTexts = [
-            this.tooltipTitle, 
-            this.tooltipPrice, 
-            this.tooltipGrowthRate,
-            this.tooltipClickValue,
-            this.tooltipDescription
-        ];
-        this.tooltipTitleBreak = this.add.line(0, 0, 0, 0, 0, 0, 0x999999).setOrigin(0, 0);
-        this.tooltipPriceBreak = this.add.line(0, 0, 0, 0, 0, 0, 0x999999).setOrigin(0, 0);
-        this.tooltipRatesBreak = this.add.line(0, 0, 0, 0, 0, 0, 0x999999).setOrigin(0, 0);
-        this.tooltipBreaks = [
-            this.tooltipTitleBreak,
-            this.tooltipPriceBreak,
-            this.tooltipRatesBreak
-        ];
-        this.tooltip = this.add.group([this.tooltipPanel].concat(this.tooltipTexts).concat(this.tooltipBreaks));
-        this.tooltip.setVisible(false);
+        // Shop tooltips
+        this.tooltips = [];
+        this.createTooltips();
 
         // Reset confirmation popup
         let confirmationPanel = this.add.nineslice(mapOriginX, this.game.renderer.height / 2 - 20,
@@ -254,8 +243,21 @@ export class UIScene extends Phaser.Scene {
         audio.playSound(this, "shopDeselect");
     }
 
+    // Update the available shop selections
     updateValidShopSelections(currentCash) {
+        this.shopPrices.sort((a, b) => a - b);
+        this.shopPriceBelow = -Number.MAX_VALUE;
+        this.shopPriceAbove = this.shopPrices[0];
+        let shopPricesFound = false;
+        
         for (let i = 0; i < this.shopItems.length; i++) {
+            // Update the price boundaries used to check when available shop selections should be updated
+            if (i > 0 && currentCash >= this.shopPrices[i - 1] && currentCash < this.shopPrices[i]) {
+                this.shopPriceBelow = this.shopPrices[i - 1];
+                this.shopPriceAbove = this.shopPrices[i];
+                shopPricesFound = true;
+            }
+
             // If the player should be able to select this option then make it active
             if (this.shopItems[i].selection.selectionType == ShopSelectionType.DEMOLITION || this.shopItems[i].selection.getPrice(this.cache.json) <= currentCash) {
                 this.shopItems[i].sprite.alpha = 1;
@@ -277,90 +279,117 @@ export class UIScene extends Phaser.Scene {
                 }
             }
         }
-    }
-
-    setTooltip(index) {
-        if (isInDialog()) {
-            return;
-        }
-        let tooltipPosition = this.getSelectionPosition(index);
-        this.tooltipPanel.setPosition(tooltipPosition.x, tooltipPosition.y);
-        // Flip tooltip for lower selections so it doesn't get cut off at the bottom of the screen
-        if (index < tooltipFlipIndex) {
-            this.tooltipPanel.setOrigin(1, 0);
-        } else {
-            this.tooltipPanel.setOrigin(1, 1);
-        }
-        this.setTooltipText(index);
-
-        let panelWidth = 0;
-        let panelHeight = tooltipTextMargin;
-        let tooltipTextYDiff = [];
-        // Resize panel
-        for (let i = 0; i < this.tooltipTexts.length; i++) {
-            if (!isBlank(this.tooltipTexts[i].text)) {
-                panelWidth = Math.max(panelWidth, this.tooltipTexts[i].width + 2 * tooltipTextMargin);
-                // No line break is added between the cash growth rates. Also should ignore presence of "/click"
-                // in the last text, since it is the description, no the click value.
-                if (i > 0 && (i == this.tooltipTexts.length - 1 || !this.tooltipTexts[i].text.includes("/click"))) {
-                    panelHeight += tooltipTextBreakYMargin;
-                }
-                tooltipTextYDiff[i] = panelHeight;
-                panelHeight += this.tooltipTexts[i].height + tooltipTextMargin;
-            }
-        }
-        // There is a bug in Phaser 3 that causes fonts to looks messy after resizing
-        // the nineslice. For now using the workaround of creating and immediately
-        // deleting a dummy text object after resizing the nineslice.
-        // When this is fixed in a future Phaser release this can be removed.
-        // See https://github.com/jdotrjs/phaser3-nineslice/issues/16
-        // See https://github.com/photonstorm/phaser/issues/5064
-        this.tooltipPanel.resize(panelWidth, panelHeight);
-        let dummyText = this.add.text(0, 0, "");
-        dummyText.destroy();
         
-        // Move text and break objects
-        for (let i = 0; i < this.tooltipTexts.length; i++) {
-            this.tooltipTexts[i].setPosition(this.tooltipPanel.getTopCenter().x, this.tooltipPanel.getTopCenter().y + tooltipTextYDiff[i]);
-            this.tooltipTexts[i].width = panelWidth - 2 * tooltipTextMargin;
+        // Update bounds if player can afford everything
+        if (!shopPricesFound && currentCash >= this.shopPrices[this.shopPrices.length - 1]) {
+            this.shopPriceBelow = this.shopPrices[this.shopPrices.length - 1];
+            this.shopPriceAbove = Number.MAX_VALUE;
         }
-        let breakX = this.tooltipPanel.getTopLeft().x + tooltipTextBreakXMargin;
-        let breakY = this.tooltipPrice.getTopCenter().y - (tooltipTextBreakYMargin + tooltipTextMargin) / 2;
-        this.tooltipTitleBreak.setTo(breakX, breakY, this.tooltipPanel.getTopRight().x - tooltipTextBreakXMargin, breakY);
-        breakY = this.tooltipGrowthRate.getTopCenter().y - (tooltipTextBreakYMargin + tooltipTextMargin) / 2;
-        this.tooltipPriceBreak.setTo(breakX, breakY, this.tooltipPanel.getTopRight().x - tooltipTextBreakXMargin, breakY);
-        breakY = this.tooltipDescription.getTopCenter().y - (tooltipTextBreakYMargin + tooltipTextMargin) / 2;
-        this.tooltipRatesBreak.setTo(breakX, breakY, this.tooltipPanel.getTopRight().x - tooltipTextBreakXMargin, breakY);
-
-        this.tooltip.setVisible(true);
     }
 
-    setTooltipText(index) {
-        let shopSelection;
-        if (this.shopItems[index].selection.selectionType == ShopSelectionType.DEMOLITION) {
-            this.tooltipTitle.setText("Demolish building");
-            this.tooltipPrice.setText("Costs half of the construction cost for the selected building");
-            // Hide unneeded text and breaks
-            this.tooltipPriceBreak.setAlpha(0);
-            this.tooltipRatesBreak.setAlpha(0);
-            this.tooltipGrowthRate.setText("");
-            this.tooltipClickValue.setText("");
-            this.tooltipDescription.setText("");
-        } else {
-            if (this.shopItems[index].selection.selectionType == ShopSelectionType.TILE_ONLY) {
-                shopSelection = this.cache.json.get('tiles')[this.shopItems[index].selection.getName()];
-            } else {
-                shopSelection = this.cache.json.get('buildings')[this.shopItems[index].selection.getName()];
+    // Create tooltips for each shop item, and hide them all
+    createTooltips() {
+        for (let i = 0; i < this.shopItems.length; i++) {
+            let tooltipPosition = this.getSelectionPosition(i);
+            let tooltipPanel = this.add.nineslice(tooltipPosition.x, tooltipPosition.y,
+                0, 0, 'greyPanel', 7).setOrigin(1, 0);
+            // Flip tooltip for lower selections so it doesn't get cut off at the bottom of the screen
+            if (i >= tooltipFlipIndex) {
+                tooltipPanel.setOrigin(1, 1);
             }
 
-            this.tooltipTitle.setText(shopSelection['name']);
-            formatPhaserCashText(this.tooltipPrice, shopSelection['cost'], "", false, true);
-            formatPhaserCashText(this.tooltipGrowthRate, shopSelection['baseCashGrowthRate'], "/second", true, false);
-            formatPhaserCashText(this.tooltipClickValue, shopSelection['baseClickValue'], "/click", true, false);
-            this.tooltipDescription.setText(shopSelection['description']);
+            // Create tooltip game objects
+            let tooltipTitle = this.add.text(0, 0, "", { ...this.tooltipTextStyle, font: "18px Verdana" }).setOrigin(0.5, 0);
+            let tooltipPrice = this.add.text(0, 0, "", { ...this.tooltipTextStyle, font: "16px Verdana" }).setOrigin(0.5, 0);
+            let tooltipGrowthRate = this.add.text(0, 0, "", { ...this.tooltipTextStyle, font: "16px Verdana" }).setOrigin(0.5, 0);
+            let tooltipClickValue = this.add.text(0, 0, "", { ...this.tooltipTextStyle, font: "16px Verdana" }).setOrigin(0.5, 0);
+            let tooltipDescription = this.add.text(0, 0, "", this.tooltipTextStyle).setOrigin(0.5, 0);
+            let tooltipTexts = [
+                tooltipTitle, 
+                tooltipPrice, 
+                tooltipGrowthRate,
+                tooltipClickValue,
+                tooltipDescription
+            ];
+            let tooltipTitleBreak = this.add.line(0, 0, 0, 0, 0, 0, 0x999999).setOrigin(0, 0);
+            let tooltipPriceBreak = this.add.line(0, 0, 0, 0, 0, 0, 0x999999).setOrigin(0, 0);
+            let tooltipRatesBreak = this.add.line(0, 0, 0, 0, 0, 0, 0x999999).setOrigin(0, 0);
+            let tooltipBreaks = [
+                tooltipTitleBreak,
+                tooltipPriceBreak,
+                tooltipRatesBreak
+            ];
+            let tooltip = this.add.group([tooltipPanel].concat(tooltipTexts).concat(tooltipBreaks));
+            tooltip.setVisible(false);
+            this.tooltips.push(tooltip);
 
-            this.tooltipPriceBreak.setAlpha(1);
-            this.tooltipRatesBreak.setAlpha(1);
+            // Set tooltip text values
+            let shopSelection;
+            if (this.shopItems[i].selection.selectionType == ShopSelectionType.DEMOLITION) {
+                tooltipTitle.setText("Demolish building");
+                tooltipPrice.setText("Costs half of the construction cost for the selected building");
+                // Hide unneeded text and breaks
+                tooltipPriceBreak.setAlpha(0);
+                tooltipRatesBreak.setAlpha(0);
+                tooltipGrowthRate.setText("");
+                tooltipClickValue.setText("");
+                tooltipDescription.setText("");
+            } else {
+                if (this.shopItems[i].selection.selectionType == ShopSelectionType.TILE_ONLY) {
+                    shopSelection = this.cache.json.get('tiles')[this.shopItems[i].selection.getName()];
+                } else {
+                    shopSelection = this.cache.json.get('buildings')[this.shopItems[i].selection.getName()];
+                }
+    
+                tooltipTitle.setText(shopSelection['name']);
+                formatPhaserCashText(tooltipPrice, shopSelection['cost'], "", false, true);
+                formatPhaserCashText(tooltipGrowthRate, shopSelection['baseCashGrowthRate'], "/second", true, false);
+                formatPhaserCashText(tooltipClickValue, shopSelection['baseClickValue'], "/click", true, false);
+                tooltipDescription.setText(shopSelection['description']);
+    
+                tooltipPriceBreak.setAlpha(1);
+                tooltipRatesBreak.setAlpha(1);
+            }
+            
+            // Resize and set positions of tooltip elements
+            let panelWidth = 0;
+            let panelHeight = tooltipTextMargin;
+            let tooltipTextYDiff = [];
+            // Resize panel
+            for (let i = 0; i < tooltipTexts.length; i++) {
+                if (!isBlank(tooltipTexts[i].text)) {
+                    panelWidth = Math.max(panelWidth, tooltipTexts[i].width + 2 * tooltipTextMargin);
+                    // No line break is added between the cash growth rates. Also should ignore presence of "/click"
+                    // in the last text, since it is the description, no the click value.
+                    if (i > 0 && (i == tooltipTexts.length - 1 || !tooltipTexts[i].text.includes("/click"))) {
+                        panelHeight += tooltipTextBreakYMargin;
+                    }
+                    tooltipTextYDiff[i] = panelHeight;
+                    panelHeight += tooltipTexts[i].height + tooltipTextMargin;
+                }
+            }
+            // There is a bug in Phaser 3 that causes fonts to looks messy after resizing
+            // the nineslice. For now using the workaround of creating and immediately
+            // deleting a dummy text object after resizing the nineslice.
+            // When this is fixed in a future Phaser release this can be removed.
+            // See https://github.com/jdotrjs/phaser3-nineslice/issues/16
+            // See https://github.com/photonstorm/phaser/issues/5064
+            tooltipPanel.resize(panelWidth, panelHeight);
+            let dummyText = this.add.text(0, 0, "");
+            dummyText.destroy();
+            
+            // Move text and break objects
+            for (let i = 0; i < tooltipTexts.length; i++) {
+                tooltipTexts[i].setPosition(tooltipPanel.getTopCenter().x, tooltipPanel.getTopCenter().y + tooltipTextYDiff[i]);
+                tooltipTexts[i].width = panelWidth - 2 * tooltipTextMargin;
+            }
+            let breakX = tooltipPanel.getTopLeft().x + tooltipTextBreakXMargin;
+            let breakY = tooltipPrice.getTopCenter().y - (tooltipTextBreakYMargin + tooltipTextMargin) / 2;
+            tooltipTitleBreak.setTo(breakX, breakY, tooltipPanel.getTopRight().x - tooltipTextBreakXMargin, breakY);
+            breakY = tooltipGrowthRate.getTopCenter().y - (tooltipTextBreakYMargin + tooltipTextMargin) / 2;
+            tooltipPriceBreak.setTo(breakX, breakY, tooltipPanel.getTopRight().x - tooltipTextBreakXMargin, breakY);
+            breakY = tooltipDescription.getTopCenter().y - (tooltipTextBreakYMargin + tooltipTextMargin) / 2;
+            tooltipRatesBreak.setTo(breakX, breakY, tooltipPanel.getTopRight().x - tooltipTextBreakXMargin, breakY);
         }
     }
 
@@ -474,7 +503,10 @@ export class UIScene extends Phaser.Scene {
 
     cashChangeListener(cash, scene) {
         scene.currentCashText.setText(formatCash(cash, false));
-        scene.updateValidShopSelections(cash);
+        // Avoid updating shop selections each call as it is slow
+        if (cash < scene.shopPriceBelow || cash >= scene.shopPriceAbove) {
+            scene.updateValidShopSelections(cash);
+        }
     }
 
     cashGrowthListener(cashGrowth, scene) {

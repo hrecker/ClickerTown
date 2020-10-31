@@ -4,7 +4,7 @@ import * as build from '../model/Building';
 import * as tile from '../model/Tile';
 import { ShopSelectionType, addShopSelectionListener, isInDialog } from '../state/UIState';
 import { addGameResetListener } from '../state/GameState';
-import { formatCash, formatPhaserCashText } from '../util/Util';
+import { formatCash, formatPhaserCashText, setTextColorIfNecessary } from '../util/Util';
 import * as audio from '../state/AudioState';
 
 const tileScale = 1;
@@ -15,6 +15,7 @@ const hoverImageAlpha = 0.65;
 const previewWidth = 200;
 const previewHeight = 125;
 const previewTextMargin = 7;
+const clickParticlesRateMs = 50;
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -64,6 +65,7 @@ export class MapScene extends Phaser.Scene {
         // Click handlers
         this.input.mouse.disableContextMenu();
         this.input.on("pointerup", this.handleClick, this);
+        this.lastClickParticles = 0;
         
         // Listeners
         addShopSelectionListener(this.shopSelectionListener, this);
@@ -314,6 +316,7 @@ export class MapScene extends Phaser.Scene {
         this.tilePreviewTitle = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
             previewRect.getTopLeft().y + previewTextMargin,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
+        this.tilePreviewTitle.setColor("#000");
         this.tilePreviewGrowthRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
             previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
@@ -379,7 +382,7 @@ export class MapScene extends Phaser.Scene {
     updatePreviewText(text, value, suffix) {
         // Print as-is if the value isn't a number
         if (isNaN(value)) {
-            text.setColor("#000000");
+            setTextColorIfNecessary(text, "#000");
             text.setText(value);
         } else {
             // Highlight numeric values based on positive/negative
@@ -389,11 +392,17 @@ export class MapScene extends Phaser.Scene {
 
     addClickCash(x, y) {
         // Always give at least one cent per click, just to be merciful
-        let clickCash = Math.max(state.getClickCashValue(), 0.01);	
-        this.addTemporaryText(formatCash(clickCash, false),	
-            "#ffffff", 48, x, y);
-        this.cashEmitter.setPosition(x, y);
-        this.cashEmitter.explode();
+        let clickCash = Math.max(state.getClickCashValue(), 0.01);
+        // Limit rate of producing click particles & text
+        let now = Date.now();
+        let timePassed = now - this.lastClickParticles;
+        if (timePassed >= clickParticlesRateMs) {
+            this.addTemporaryText(formatCash(clickCash, false),	
+                "#ffffff", 48, x, y);
+            this.cashEmitter.setPosition(x, y);
+            this.cashEmitter.explode();
+            this.lastClickParticles = now;
+        }
         state.addCurrentCash(clickCash);
     }
 
@@ -427,8 +436,8 @@ export class MapScene extends Phaser.Scene {
         let displayTile = this.worldCoordinatesToDisplayTileCoordinates(worldCoords.x, worldCoords.y);
         let tile = this.displayToMapCoordinates(displayTile.x, displayTile.y);
 
-        // If hovered tile hasn't changed and a shop selection is active, just exit
-        if (displayTile.x == this.tileHighlightActiveX && displayTile.y == this.tileHighlightActiveY && this.currentShopSelection) {
+        // If hovered tile hasn't changed, just exit
+        if (displayTile.x == this.tileHighlightActiveX && displayTile.y == this.tileHighlightActiveY) {
             return;
         }
 
@@ -436,11 +445,11 @@ export class MapScene extends Phaser.Scene {
         if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
             this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
         }
+        this.tileHighlightActiveX = displayTile.x;
+        this.tileHighlightActiveY = displayTile.y;
 
         // Update hover image/tile image, cash preview, and alpha
         if (this.areTileCoordinatesValid(tile.x, tile.y) && map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
-            this.tileHighlightActiveX = displayTile.x;
-            this.tileHighlightActiveY = displayTile.y;
             let tileCoords = this.displayTileCoordinatesToWorldCoordinates(displayTile.x, displayTile.y);
             this.hoverImage.x = tileCoords.x;
             this.hoverImage.y = tileCoords.y;
@@ -461,8 +470,6 @@ export class MapScene extends Phaser.Scene {
             }
         // Hide preview, or show stats for existing building
         } else {
-            this.tileHighlightActiveX = -1;
-            this.tileHighlightActiveY = -1;
             this.hoverImage.alpha = 0;
             if (this.areTileCoordinatesValid(displayTile.x, displayTile.y)) {
                 this.updatePreview(tile.x, tile.y, displayTile.x, displayTile.y, true);

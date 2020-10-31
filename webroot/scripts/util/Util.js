@@ -36,21 +36,27 @@ export function formatPhaserCashText(textObject, cashValue, suffix, includePrefi
     if (cashValue > 0.001) {
         prefix += "+";
         if (invertColor) {
-            textObject.setColor(negativeCashColor);
+            setTextColorIfNecessary(textObject, negativeCashColor);
         } else {
-            textObject.setColor(positiveCashColor);
+            setTextColorIfNecessary(textObject, positiveCashColor);
         }
     } else if (cashValue < -0.001) {
         if (invertColor) {
-            textObject.setColor(positiveCashColor);
+            setTextColorIfNecessary(textObject, positiveCashColor);
         } else {
-            textObject.setColor(negativeCashColor);
+            setTextColorIfNecessary(textObject, negativeCashColor);
         }
     } else {
-        textObject.setColor("#000000");
+        setTextColorIfNecessary(textObject, "#000");
     }
     let cashText = formatCash(cashValue) + suffix;
     textObject.setText(includePrefix ? prefix + cashText : cashText);
+}
+
+export function setTextColorIfNecessary(textObject, color) {
+    if (textObject.style.color != color) {
+        textObject.setColor(color);
+    }
 }
 
 // https://stackoverflow.com/questions/154059/how-can-i-check-for-an-empty-undefined-null-string-in-javascript
