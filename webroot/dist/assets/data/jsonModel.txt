@@ -7,7 +7,7 @@ Buildings
 - sprite90: image file name, when rotated 90 degrees clockwise
 - sprite180: image file name, when rotated 180 degrees clockwise
 - sprite270: image file name, when rotated 270 degrees clockwise
-- cost: cost of placing the building in dollars
+- cost: base cost of placing the building in dollars
 - shopSelectionType: what gets placed when you purchase the building
     - BUILDING_ONLY: just the building
     - TILE_AND_BUILDING: both a set tile and the building
@@ -19,10 +19,11 @@ Tiles
 - name: name of the tile
 - description: description displayed in shop tooltip
 - sprite: image file name for the tile, in assets/sprites/tiles/
-- cost: cost of placing the tile in dollars
+- cost: base cost of placing the tile in dollars
 - baseCashGrowthRate: how much this tile increases/decreases your cash growth rate
 - baseClickValue: how much this tile increases/decreases the amount of cash you get per click
 - startingTile: whether this tile can be set on the starting tilemap. Only tiles with 0 baseCashGrowthRate and 0 baseClickValue should be starting tiles
+- flatCost: whether this tile has a flat cost (does not increase based on how many you have)
 
 
 Initials
@@ -32,4 +33,5 @@ Initials
 - mapWidth: width of map in tiles
 - mapHeight: height of map in tiles
 - demolishFraction: fraction of building cost paid to demolish a building
+- priceIncreaseRate: multiplier for price increase after each building purchase. Resulting price will be rounded up.
 

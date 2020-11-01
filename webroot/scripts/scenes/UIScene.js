@@ -115,7 +115,6 @@ export class UIScene extends Phaser.Scene {
 
         // Shop selections
         this.shopItems = [];
-        this.shopPrices = [];
         // Demolish
         this.shopItems.push({ selection: new ShopSelection(ShopSelectionType.DEMOLITION, null, null) });
         // Buildings
@@ -123,13 +122,11 @@ export class UIScene extends Phaser.Scene {
             let building = this.cache.json.get('buildings')[buildingName];
             let newItem = { selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) };
             this.shopItems.push(newItem);
-            this.shopPrices.push(newItem['selection'].getPrice(this.cache.json));
         }
         // Tiles
         for (let tileName in this.cache.json.get('tiles')) {
             let newItem = { selection: new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null) };
             this.shopItems.push(newItem);
-            this.shopPrices.push(newItem['selection'].getPrice(this.cache.json));
         }
 
         for (let i = 0; i < this.shopItems.length; i++) {
@@ -150,7 +147,7 @@ export class UIScene extends Phaser.Scene {
                 this.add.rectangle(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4,
                     selectionBoxSize + 3, selectionBoxSize / 4 + 1, 0x000000).setOrigin(0).setAlpha(0.5);
                 this.shopItems[i].priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 	
-                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json), true), shopPriceStyle);	
+                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json), true), shopPriceStyle);	 //TODO here
                 this.shopItems[i].priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
             }
         }
@@ -245,16 +242,18 @@ export class UIScene extends Phaser.Scene {
 
     // Update the available shop selections
     updateValidShopSelections(currentCash) {
-        this.shopPrices.sort((a, b) => a - b);
+        let shopPrices = this.shopItems.map(item => item['selection'].getPrice(this.cache.json));
+
+        shopPrices.sort((a, b) => a - b);
         this.shopPriceBelow = -Number.MAX_VALUE;
-        this.shopPriceAbove = this.shopPrices[0];
+        this.shopPriceAbove = shopPrices[0];
         let shopPricesFound = false;
         
         for (let i = 0; i < this.shopItems.length; i++) {
             // Update the price boundaries used to check when available shop selections should be updated
-            if (i > 0 && currentCash >= this.shopPrices[i - 1] && currentCash < this.shopPrices[i]) {
-                this.shopPriceBelow = this.shopPrices[i - 1];
-                this.shopPriceAbove = this.shopPrices[i];
+            if (i > 0 && currentCash >= shopPrices[i - 1] && currentCash < shopPrices[i]) {
+                this.shopPriceBelow = shopPrices[i - 1];
+                this.shopPriceAbove = shopPrices[i];
                 shopPricesFound = true;
             }
 
@@ -281,8 +280,8 @@ export class UIScene extends Phaser.Scene {
         }
         
         // Update bounds if player can afford everything
-        if (!shopPricesFound && currentCash >= this.shopPrices[this.shopPrices.length - 1]) {
-            this.shopPriceBelow = this.shopPrices[this.shopPrices.length - 1];
+        if (!shopPricesFound && currentCash >= shopPrices[shopPrices.length - 1]) {
+            this.shopPriceBelow = shopPrices[shopPrices.length - 1];
             this.shopPriceAbove = Number.MAX_VALUE;
         }
     }
@@ -342,7 +341,7 @@ export class UIScene extends Phaser.Scene {
                 }
     
                 tooltipTitle.setText(shopSelection['name']);
-                formatPhaserCashText(tooltipPrice, shopSelection['cost'], "", false, true);
+                formatPhaserCashText(tooltipPrice, shopSelection['cost'], "", false, true); //TODO will need to set this when price changes
                 formatPhaserCashText(tooltipGrowthRate, shopSelection['baseCashGrowthRate'], "/second", true, false);
                 formatPhaserCashText(tooltipClickValue, shopSelection['baseClickValue'], "/click", true, false);
                 tooltipDescription.setText(shopSelection['description']);
@@ -504,6 +503,8 @@ export class UIScene extends Phaser.Scene {
     cashChangeListener(cash, scene) {
         scene.currentCashText.setText(formatCash(cash, false));
         // Avoid updating shop selections each call as it is slow
+        //TODO will need to update the shopPriceBelow and shopPriceAbove values whenever a building/tile
+        // is placed or destroyed.
         if (cash < scene.shopPriceBelow || cash >= scene.shopPriceAbove) {
             scene.updateValidShopSelections(cash);
         }

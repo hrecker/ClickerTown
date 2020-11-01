@@ -237,6 +237,7 @@ export class MapScene extends Phaser.Scene {
             if (this.currentShopSelection && this.areTileCoordinatesValid(mapTile.x, mapTile.y) &&
                     map.canPlaceShopSelection(this.currentShopSelection, mapTile.x, mapTile.y)) {
                 // Build the shop selection if enough cash
+                //TODO here
                 if (map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, 
                         mapTile.x, mapTile.y) <= state.getCurrentCash()) {
                     this.placeShopSelection(mapTile.x, mapTile.y);
@@ -267,6 +268,7 @@ export class MapScene extends Phaser.Scene {
     placeShopSelection(x, y) {
         let tileMap = map.getMap();
         const selection = this.currentShopSelection;
+        //TODO here
         let price = map.getShopSelectionPrice(this.cache.json, selection, x, y);
         // Update the tileMap
         let realRotation = this.shopSelectionRotation - map.getMapRotation();
@@ -365,6 +367,7 @@ export class MapScene extends Phaser.Scene {
             }
             // Preview difference in rates that would result after shop selection is placed
             this.updatePreviewTexts(
+                //TODO here
                 -1 * map.getShopSelectionPrice(this.cache.json, this.currentShopSelection, tileX, tileY), 
                 rateDiffs.cashGrowthRate,
                 rateDiffs.clickValue);

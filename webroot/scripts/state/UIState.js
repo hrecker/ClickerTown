@@ -1,3 +1,5 @@
+import * as map from './MapState';
+
 export const ShopSelectionType = Object.freeze({
     DEMOLITION: 0,
     TILE_ONLY: 1,
@@ -57,16 +59,29 @@ export class ShopSelection {
     }
 
     getPrice(jsonCache) {
+        let basePrice;
         switch (this.selectionType) {
             case ShopSelectionType.TILE_ONLY:
-                return jsonCache.get('tiles')[this.tileName]['cost'];
+                basePrice = jsonCache.get('tiles')[this.tileName]['cost'];
+                if (jsonCache.get('tiles')[this.tileName]['flatCost']) {
+                    return basePrice;
+                }
+                break;
             case ShopSelectionType.BUILDING_ONLY:
             case ShopSelectionType.TILE_AND_BUILDING:
-                return jsonCache.get('buildings')[this.buildingName]['cost'];
+                basePrice = jsonCache.get('buildings')[this.buildingName]['cost'];
+                break;
             // Demolition price depends on what is demolished
             case ShopSelectionType.DEMOLITION:
             default:
                 return 0;
         }
+
+        let placementCount = map.getPlacementCount(this.getName());
+        let price = Math.floor(basePrice * Math.pow(map.getPriceIncreaseRate(), placementCount));
+        if (price == basePrice && placementCount > 0) {
+            price++;
+        }
+        return price;
     }
 }

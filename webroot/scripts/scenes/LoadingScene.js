@@ -68,6 +68,7 @@ export class LoadingScene extends Phaser.Scene {
         state.setStartingCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
         state.setStartingClickValue(this.cache.json.get('initials')['startingClickValue']);
         map.setDemolitionCostFraction(this.cache.json.get('initials')['demolishFraction']);
+        map.setPriceIncreaseRate(this.cache.json.get('initials')['priceIncreaseRate']);
 
         // Load assets
         // Building sprites

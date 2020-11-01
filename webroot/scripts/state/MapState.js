@@ -8,9 +8,19 @@ let map;
 let demolitionCostFraction;
 let mapRotation;
 let mapRotationCallbacks = [];
+let priceIncreaseRate = 1;
+let placementCounts = {};
 
 export function setDemolitionCostFraction(costFraction) {
     demolitionCostFraction = costFraction;
+}
+
+export function setPriceIncreaseRate(rate) {
+    priceIncreaseRate = rate;
+}
+
+export function getPriceIncreaseRate() {
+    return priceIncreaseRate;
 }
 
 export function initializeMap(width, height) {
@@ -25,11 +35,46 @@ export function initializeMap(width, height) {
             };
         }
     }
+    updatePlacementCounts();
     return map;
+}
+
+function updatePlacementCounts() {
+    placementCounts = {};
+    for (let x = 0; x < map.length; x++) {
+        for (let y = 0; y < map[x].length; y++) {
+            if (map[x][y].building) {
+                incrementPlacementCount(map[x][y].building);
+            }
+            incrementPlacementCount(map[x][y].tile);
+        }
+    }
+}
+
+function incrementPlacementCount(placed) {
+    if (placementCounts[placed]) {
+        placementCounts[placed]++;
+    } else {
+        placementCounts[placed] = 1;
+    }
+}
+
+function decrementPlacementCount(removed) {
+    if (placementCounts[removed]) {
+        placementCounts[removed]--;
+    }
+}
+
+export function getPlacementCount(placement) {
+    if (placementCounts[placement]) {
+        return placementCounts[placement];
+    }
+    return 0;
 }
 
 export function setMap(newMap) {
     map = newMap;
+    updatePlacementCounts();
 }
 
 export function getMap() {
@@ -88,13 +133,22 @@ export function getShopSelectionPrice(jsonCache, selection, targetX, targetY) {
 
 export function addShopSelectionToMap(selection, tileMap, x, y, rotation) {
     if (selection.selectionType == ShopSelectionType.DEMOLITION) {
+        if (tileMap === map) {
+            decrementPlacementCount(tileMap[x][y].building);
+        }
         tileMap[x][y].building = null;
     } else {
         if (selection.selectionType != ShopSelectionType.TILE_ONLY) {
             tileMap[x][y].building = selection.buildingName;
             tileMap[x][y].rotation = rotation;
+            if (tileMap === map) {
+                incrementPlacementCount(selection.buildingName);
+            }
         } 
         if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
+            if (tileMap === map && tileMap[x][y].tile != selection.tileName) {
+                incrementPlacementCount(selection.tileName);
+            }
             tileMap[x][y].tile = selection.tileName;
         }
     }
