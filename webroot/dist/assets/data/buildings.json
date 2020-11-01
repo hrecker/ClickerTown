@@ -15,7 +15,7 @@
     "Restaurant": {
         "name": "Restaurant",
         "tileName": "Concrete",
-        "description": "+$1/second for each House within 2 tiles.",
+        "description": "+$0.50/second for each House within 2 tiles.",
         "sprite": "restaurant.png",
         "sprite90": "restaurant90.png",
         "sprite180": "restaurant180.png",
@@ -36,8 +36,8 @@
         "sprite270": "convenienceStore270.png",
         "cost": 250,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 1,
-        "baseClickValue": 1.5
+        "baseCashGrowthRate": 1.5,
+        "baseClickValue": 2
     },
     "Warehouse": {
         "name": "Warehouse",
@@ -46,30 +46,30 @@
         "sprite": "warehouse.png",
         "cost": 500,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 3.5,
-        "baseClickValue": 0.25
+        "baseCashGrowthRate": 3,
+        "baseClickValue": 0.5
     },
     "Fountain": {
         "name": "Fountain",
         "tileName": "Concrete",
-        "description": "+$0.75/second for each Grass within 2 tiles",
+        "description": "+$1/second for each Grass within 2 tiles",
         "sprite": "fountain.png",
         "cost": 1000,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 0,
-        "baseClickValue": 0.50
+        "baseCashGrowthRate": 1,
+        "baseClickValue": 1.5
     },
     "Bank": {
         "name": "Bank",
         "tileName": "Concrete",
-        "description": "+$0.25/second for each House within 5 tiles.\n-$10/second for each Bank within 5 tiles.",
+        "description": "+$0.50/second for each House within 5 tiles.\n-$10/second for each Bank within 5 tiles.",
         "sprite": "bank.png",
         "sprite90": "bank90.png",
         "sprite180": "bank180.png",
         "sprite270": "bank270.png",
         "cost": 2000,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 5,
+        "baseCashGrowthRate": 3,
         "baseClickValue": 1
     },
     "Apartment": {
@@ -79,7 +79,7 @@
         "sprite": "apartment.png",
         "cost": 2500,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": 2,
+        "baseCashGrowthRate": 1,
         "baseClickValue": 0.5
     },
     "Mall": {
@@ -93,25 +93,25 @@
         "cost": 5000,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": -5,
-        "baseClickValue": 5
+        "baseClickValue": 7.5
     },
     "Courthouse": {
         "name": "Courthouse",
         "tileName": "Concrete",
-        "description": "+$2/second for each non-Hermit, non-Courthouse building within 4 tiles. -$100/second for each Courthouse within 4 tiles.",
+        "description": "+$2/second for each non-Hermit, non-Courthouse building within 5 tiles. -$100/second for each Courthouse within 4 tiles.",
         "sprite": "courthouse.png",
         "sprite90": "courthouse90-180.png",
         "sprite180": "courthouse90-180.png",
         "sprite270": "courthouse270.png",
         "cost": 15000,
         "shopSelectionType": "TILE_AND_BUILDING",
-        "baseCashGrowthRate": -20,
+        "baseCashGrowthRate": -10,
         "baseClickValue": 1.5
     },
     "Hermit": {
         "name": "Hermit",
         "tileName": "Concrete",
-        "description": "-$2/second for each building within 3 tiles.",
+        "description": "-$3/second for each building within 3 tiles.",
         "sprite": "hermit.png",
         "sprite90": "hermit90.png",
         "sprite180": "hermit180.png",
@@ -124,7 +124,7 @@
     "Office": {
         "name": "Office",
         "tileName": "Concrete",
-        "description": "+$10/second for each Warehouse within 3 tiles.",
+        "description": "+$3/second for each Warehouse within 3 tiles.",
         "sprite": "office.png",
         "sprite90": "office90-180.png",
         "sprite180": "office90-180.png",
