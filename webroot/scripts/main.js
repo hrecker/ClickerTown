@@ -1,5 +1,6 @@
 /** @type {import("../../typings/phaser")}*/
 
+import { Plugin as NineSlicePlugin } from 'phaser3-nineslice'
 import { LoadingScene } from "./scenes/LoadingScene";
 import { TitleScene } from "./scenes/TitleScene";
 import { BackgroundScene } from "./scenes/BackgroundScene";
@@ -15,7 +16,7 @@ var config = {
     },
     plugins: {
         global: [ 
-            NineSlice.Plugin.DefaultCfg
+            NineSlicePlugin.DefaultCfg
         ],
     },
     scene: [
