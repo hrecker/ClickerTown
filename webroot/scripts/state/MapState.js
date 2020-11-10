@@ -1,4 +1,5 @@
-import { ShopSelectionType } from '../state/UIState';
+import { ShopSelectionType } from '../state/ShopSelectionCache';
+import { getSelectionProp, getPrice, getType, getTileName } from '../state/ShopSelectionCache';
 
 // Map is a 2D array of objects containing up to two properties	
 // "tile": name of the tile in this location	
@@ -8,19 +9,11 @@ let map;
 let demolitionCostFraction;
 let mapRotation;
 let mapRotationCallbacks = [];
-let priceIncreaseRate = 1;
+let placementCallbacks = [];
 let placementCounts = {};
 
 export function setDemolitionCostFraction(costFraction) {
     demolitionCostFraction = costFraction;
-}
-
-export function setPriceIncreaseRate(rate) {
-    priceIncreaseRate = rate;
-}
-
-export function getPriceIncreaseRate() {
-    return priceIncreaseRate;
 }
 
 export function initializeMap(width, height) {
@@ -123,34 +116,53 @@ export function getTilesWithinRange(x, y, range) {
     return result;
 }
 
-export function getShopSelectionPrice(jsonCache, selection, targetX, targetY) {
-    if (selection.selectionType == ShopSelectionType.DEMOLITION) {
-        return jsonCache.get('buildings')[map[targetX][targetY].building]['cost'] * demolitionCostFraction;
+export function getShopSelectionPrice(selection, targetX, targetY) {
+    if (getType(selection) == ShopSelectionType.DEMOLITION) {
+        return getSelectionProp(map[targetX][targetY].building, 'cost') * demolitionCostFraction;
     } else {
-        return selection.getPrice(jsonCache);
+        return getPrice(selection);
     }
 }
 
+export function addPlacementListener(callback, scene) {
+    placementCallbacks.push({ 
+        callback: callback,
+        scene: scene
+    });
+}
+
 export function addShopSelectionToMap(selection, tileMap, x, y, rotation) {
-    if (selection.selectionType == ShopSelectionType.DEMOLITION) {
+    let changed = [];
+    if (getType(selection) == ShopSelectionType.DEMOLITION) {
         if (tileMap === map) {
             decrementPlacementCount(tileMap[x][y].building);
+            changed.push(tileMap[x][y].building);
         }
         tileMap[x][y].building = null;
     } else {
-        if (selection.selectionType != ShopSelectionType.TILE_ONLY) {
-            tileMap[x][y].building = selection.buildingName;
+        if (getType(selection) != ShopSelectionType.TILE_ONLY) {
+            tileMap[x][y].building = selection;
             tileMap[x][y].rotation = rotation;
             if (tileMap === map) {
-                incrementPlacementCount(selection.buildingName);
+                incrementPlacementCount(selection);
+                changed.push(selection);
             }
         } 
-        if (selection.selectionType != ShopSelectionType.BUILDING_ONLY) {
-            if (tileMap === map && tileMap[x][y].tile != selection.tileName) {
-                incrementPlacementCount(selection.tileName);
+        if (getType(selection) != ShopSelectionType.BUILDING_ONLY) {
+            let tileName = getTileName(selection);
+            if (tileMap === map && tileMap[x][y].tile != tileName) {
+                incrementPlacementCount(tileName);
+                decrementPlacementCount(tileMap[x][y].tile);
+                changed.push(tileName);
+                changed.push(tileMap[x][y].tile);
             }
-            tileMap[x][y].tile = selection.tileName;
+            tileMap[x][y].tile = tileName;
         }
+    }
+
+    if (tileMap === map) {
+        placementCallbacks.forEach(callback => 
+            callback.callback(changed, callback.scene));
     }
 }
 
@@ -159,7 +171,7 @@ export function addShopSelectionToMap(selection, tileMap, x, y, rotation) {
 // Can only demolish tiles with a placed building.
 export function canPlaceShopSelection(selection, x, y) {
     return selection && 
-        ((map[x][y].building && selection.selectionType == ShopSelectionType.DEMOLITION) ||
-        (!map[x][y].building && selection.selectionType != ShopSelectionType.DEMOLITION &&
-        (selection.selectionType != ShopSelectionType.TILE_ONLY || map[x][y].tile != selection.getName())));
+        ((map[x][y].building && getType(selection) == ShopSelectionType.DEMOLITION) ||
+        (!map[x][y].building && getType(selection) != ShopSelectionType.DEMOLITION &&
+        (getType(selection) != ShopSelectionType.TILE_ONLY || map[x][y].tile != selection)));
 }

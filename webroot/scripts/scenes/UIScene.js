@@ -1,9 +1,10 @@
 import * as state from '../state/CashState';
-import { rotateClockwise } from '../state/MapState';
-import { ShopSelection, ShopSelectionType, setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
+import { rotateClockwise, addPlacementListener } from '../state/MapState';
+import { setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
 import { formatCash, isBlank, formatPhaserCashText } from '../util/Util';
 import * as audio from '../state/AudioState';
+import { getSelections, getSelectionProp, ShopSelectionType, getType, getPrice, isFlatCost } from '../state/ShopSelectionCache';
 
 const imageScale = 0.48;
 const topShopSelectionY = 90;
@@ -97,6 +98,7 @@ export class UIScene extends Phaser.Scene {
         state.addCurrentCashListener(this.cashChangeListener, this);
         state.addCashGrowthListener(this.cashGrowthListener, this);
         addGameResetListener(this.gameResetListener, this);
+        addPlacementListener(this.placementListener, this);
 
         // Timers
         this.lastCashGrowth = -1;
@@ -115,25 +117,16 @@ export class UIScene extends Phaser.Scene {
 
         // Shop selections
         this.shopItems = [];
-        // Demolish
-        this.shopItems.push({ selection: new ShopSelection(ShopSelectionType.DEMOLITION, null, null) });
-        // Buildings
-        for (let buildingName in this.cache.json.get('buildings')) {
-            let building = this.cache.json.get('buildings')[buildingName];
-            let newItem = { selection: new ShopSelection(ShopSelectionType[building['shopSelectionType']], building['tileName'], building['name']) };
-            this.shopItems.push(newItem);
-        }
-        // Tiles
-        for (let tileName in this.cache.json.get('tiles')) {
-            let newItem = { selection: new ShopSelection(ShopSelectionType.TILE_ONLY, tileName, null) };
-            this.shopItems.push(newItem);
+        for (let selection in getSelections()) {
+            this.shopItems.push({ selection: selection });
         }
 
+        this.priceTexts = {};
         for (let i = 0; i < this.shopItems.length; i++) {
             let position = this.getSelectionPosition(i);
             this.shopItems[i].selectionBox = this.add.nineslice(position.x, position.y, 100, 100, 'greyPanel', 7).setOrigin(0.5);
             this.shopItems[i].selectionBox.setScale(selectionBoxScale);
-            this.shopItems[i].sprite = this.add.image(position.x, position.y, this.shopItems[i].selection.getName()).setScale(imageScale);
+            this.shopItems[i].sprite = this.add.image(position.x, position.y, this.shopItems[i].selection).setScale(imageScale);
             this.shopItems[i].selectionBox.setInteractive();
             this.shopItems[i].selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
             this.shopItems[i].selectionBox.on("pointerover", () => { 
@@ -143,11 +136,14 @@ export class UIScene extends Phaser.Scene {
                 this.tooltips[i].setVisible(true);
             });
             this.shopItems[i].selectionBox.on("pointerout", () => { this.tooltips[i].setVisible(false); });
-            if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
+            if (getType(this.shopItems[i].selection) != ShopSelectionType.DEMOLITION) {
                 this.add.rectangle(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4,
                     selectionBoxSize + 3, selectionBoxSize / 4 + 1, 0x000000).setOrigin(0).setAlpha(0.5);
-                this.shopItems[i].priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 	
-                    formatCash(this.shopItems[i].selection.getPrice(this.cache.json), true), shopPriceStyle);	 //TODO here
+                let priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 	
+                    formatCash(getPrice(this.shopItems[i].selection), true), shopPriceStyle);
+                this.shopItems[i].priceText = priceText;
+                this.priceTexts[this.shopItems[i].selection] = {};
+                this.priceTexts[this.shopItems[i].selection]["shopPriceText"] = priceText;
                 this.shopItems[i].priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
             }
         }
@@ -158,12 +154,14 @@ export class UIScene extends Phaser.Scene {
         this.shopHighlight.isFilled = false;
         this.shopHighlight.setStrokeStyle(5, 0x4287f5);
         this.shopHighlight.alpha = 0.75;
-        this.clearShopSelection();
-        this.updateValidShopSelections(state.getCurrentCash());
 
         // Shop tooltips
         this.tooltips = [];
         this.createTooltips();
+
+        // Update current shop selection
+        this.clearShopSelection();
+        this.updateValidShopSelections(state.getCurrentCash());
 
         // Reset confirmation popup
         let confirmationPanel = this.add.nineslice(mapOriginX, this.game.renderer.height / 2 - 20,
@@ -205,9 +203,12 @@ export class UIScene extends Phaser.Scene {
         return audio.isSoundEnabled() ? "soundOnButton" : "soundOffButton";
     }
 
-    // If the game is reset, clear shop selection
+    // If the game is reset, clear shop selection and reset prices
     gameResetListener(scene) {
         scene.clearShopSelection();
+        for (let selection in getSelections()) {
+            scene.updatePriceTexts(selection);
+        }
     }
 
     getSelectionPosition(index) {
@@ -242,30 +243,41 @@ export class UIScene extends Phaser.Scene {
 
     // Update the available shop selections
     updateValidShopSelections(currentCash) {
-        let shopPrices = this.shopItems.map(item => item['selection'].getPrice(this.cache.json));
+        let shopPrices = this.shopItems.map(function(item) {
+            let result = {};
+            result.price = getPrice(item.selection);
+            result.selection = item.selection;
+            return result;
+        });
 
-        shopPrices.sort((a, b) => a - b);
-        this.shopPriceBelow = -Number.MAX_VALUE;
-        this.shopPriceAbove = shopPrices[0];
+        shopPrices.sort((a, b) => a.price - b.price);
+        this.shopPriceBounds = {};
+        this.shopPriceBounds.below = -Number.MAX_VALUE;
+        this.shopPriceBounds.above = shopPrices[0].price;
+        this.shopPriceBounds.belowSelection = null;
+        this.shopPriceBounds.aboveSelection = shopPrices[0].selection;
         let shopPricesFound = false;
         
         for (let i = 0; i < this.shopItems.length; i++) {
             // Update the price boundaries used to check when available shop selections should be updated
-            if (i > 0 && currentCash >= shopPrices[i - 1] && currentCash < shopPrices[i]) {
-                this.shopPriceBelow = shopPrices[i - 1];
-                this.shopPriceAbove = shopPrices[i];
+            if (i > 0 && currentCash >= shopPrices[i - 1].price && currentCash < shopPrices[i].price) {
+                this.shopPriceBounds.below = shopPrices[i - 1].price;
+                this.shopPriceBounds.belowSelection = shopPrices[i - 1].selection;
+                this.shopPriceBounds.above = shopPrices[i].price;
+                this.shopPriceBounds.aboveSelection = shopPrices[i].selection;
                 shopPricesFound = true;
             }
 
             // If the player should be able to select this option then make it active
-            if (this.shopItems[i].selection.selectionType == ShopSelectionType.DEMOLITION || this.shopItems[i].selection.getPrice(this.cache.json) <= currentCash) {
+            if (getType(this.shopItems[i].selection) == ShopSelectionType.DEMOLITION || 
+                    getPrice(this.shopItems[i].selection) <= currentCash) {
                 this.shopItems[i].sprite.alpha = 1;
                 if (!this.shopItems[i].selectionBox.input.enabled) {
                     // If shop item is unlocking just now, then play a little sound
                     audio.playSound(this, "shopUnlock", 0.75);
                 }
                 this.shopItems[i].selectionBox.setInteractive();
-                if (this.shopItems[i].selection.selectionType != ShopSelectionType.DEMOLITION) {
+                if (getType(this.shopItems[i].selection) != ShopSelectionType.DEMOLITION) {
                     this.shopItems[i].priceText.setColor("#ffffff");
                 }
             // Otherwise prevent selecting this option
@@ -281,8 +293,10 @@ export class UIScene extends Phaser.Scene {
         
         // Update bounds if player can afford everything
         if (!shopPricesFound && currentCash >= shopPrices[shopPrices.length - 1]) {
-            this.shopPriceBelow = shopPrices[shopPrices.length - 1];
-            this.shopPriceAbove = Number.MAX_VALUE;
+            this.shopPriceBounds.below = shopPrices[shopPrices.length - 1].price;
+            this.shopPriceBounds.belowSelection = shopPrices[shopPrices.length - 1].selection;
+            this.shopPriceBounds.above = Number.MAX_VALUE;
+            this.shopPriceBounds.aboveSelecttion = null;
         }
     }
 
@@ -323,8 +337,7 @@ export class UIScene extends Phaser.Scene {
             this.tooltips.push(tooltip);
 
             // Set tooltip text values
-            let shopSelection;
-            if (this.shopItems[i].selection.selectionType == ShopSelectionType.DEMOLITION) {
+            if (getType(this.shopItems[i].selection) == ShopSelectionType.DEMOLITION) {
                 tooltipTitle.setText("Demolish building");
                 tooltipPrice.setText("Costs half of the construction cost for the selected building");
                 // Hide unneeded text and breaks
@@ -333,18 +346,17 @@ export class UIScene extends Phaser.Scene {
                 tooltipGrowthRate.setText("");
                 tooltipClickValue.setText("");
                 tooltipDescription.setText("");
-            } else {
-                if (this.shopItems[i].selection.selectionType == ShopSelectionType.TILE_ONLY) {
-                    shopSelection = this.cache.json.get('tiles')[this.shopItems[i].selection.getName()];
-                } else {
-                    shopSelection = this.cache.json.get('buildings')[this.shopItems[i].selection.getName()];
-                }
-    
-                tooltipTitle.setText(shopSelection['name']);
-                formatPhaserCashText(tooltipPrice, shopSelection['cost'], "", false, true); //TODO will need to set this when price changes
-                formatPhaserCashText(tooltipGrowthRate, shopSelection['baseCashGrowthRate'], "/second", true, false);
-                formatPhaserCashText(tooltipClickValue, shopSelection['baseClickValue'], "/click", true, false);
-                tooltipDescription.setText(shopSelection['description']);
+            } else {    
+                this.priceTexts[this.shopItems[i].selection]["tooltipPriceText"] = tooltipPrice;
+                tooltipTitle.setText(this.shopItems[i].selection);
+                formatPhaserCashText(tooltipPrice, getPrice(this.shopItems[i].selection), "", false, true);
+                formatPhaserCashText(tooltipGrowthRate,
+                    getSelectionProp(this.shopItems[i].selection, 'baseCashGrowthRate'),
+                    "/second", true, false);
+                formatPhaserCashText(tooltipClickValue,
+                    getSelectionProp(this.shopItems[i].selection, 'baseClickValue'),
+                    "/click", true, false);
+                tooltipDescription.setText(getSelectionProp(this.shopItems[i].selection, 'description'));
     
                 tooltipPriceBreak.setAlpha(1);
                 tooltipRatesBreak.setAlpha(1);
@@ -426,6 +438,37 @@ export class UIScene extends Phaser.Scene {
         });
     }
 
+    placementListener(changed, scene) {
+        let checkShopSelections = false;
+        if (changed) {
+            for (let change of changed) {
+                scene.updatePriceTexts(change);
+                // If this selection was one of the price boundaries, force a re-check of valid shop selections
+                if (change == scene.shopPriceBounds.belowSelection ||
+                        change == scene.shopPriceBounds.aboveSelection) {
+                    checkShopSelections = true;
+                }
+            }
+        }
+        if (checkShopSelections) {
+            scene.shopPriceBounds.above = Number.MIN_VALUE;
+            scene.shopPriceBounds.below = Number.MAX_VALUE;
+        }
+    }
+
+    updatePriceTexts(selection) {
+        if (isFlatCost(selection)) {
+            return;
+        }
+
+        let priceTexts = this.priceTexts[selection];
+        if (priceTexts) {
+            //TODO see if it's faster to compare text first to avoid unnecessary setText calls
+            formatPhaserCashText(priceTexts['tooltipPriceText'], getPrice(selection), "", false, true);
+            priceTexts['shopPriceText'].setText(formatCash(getPrice(selection), true));
+        }
+    }
+
     save() {
         saveGame();
         this.lastSave = Date.now();
@@ -503,9 +546,7 @@ export class UIScene extends Phaser.Scene {
     cashChangeListener(cash, scene) {
         scene.currentCashText.setText(formatCash(cash, false));
         // Avoid updating shop selections each call as it is slow
-        //TODO will need to update the shopPriceBelow and shopPriceAbove values whenever a building/tile
-        // is placed or destroyed.
-        if (cash < scene.shopPriceBelow || cash >= scene.shopPriceAbove) {
+        if (cash < scene.shopPriceBounds.below || cash >= scene.shopPriceBounds.above) {
             scene.updateValidShopSelections(cash);
         }
     }

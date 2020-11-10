@@ -13,11 +13,10 @@ function countHouses(map, tiles) {
     return houseCount;
 }
 
-export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
-    if (!map[x][y].building) {
+export function getBuildingCashGrowthRate(building, map, x, y) {
+    if (!building) {
         return 0;
     }
-    let building = buildingsJson[map[x][y].building];
     let cashGrowthRate = building['baseCashGrowthRate'];
 
     let tilesToCheck;
@@ -100,11 +99,9 @@ export function getBuildingCashGrowthRate(buildingsJson, map, x, y) {
     return cashGrowthRate;
 }
 
-export function getBuildingClickValue(buildingsJson, map, x, y) {
-    if (!map[x][y].building) {
+export function getBuildingClickValue(building, map, x, y) {
+    if (!building) {
         return 0;
     }
-    let building = buildingsJson[map[x][y].building];
-    let clickValue = building['baseClickValue'];
-    return clickValue;
+    return building['baseClickValue'];
 }
