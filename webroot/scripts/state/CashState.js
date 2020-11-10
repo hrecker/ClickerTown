@@ -1,5 +1,6 @@
-import * as build from '../model/Building';
-import * as tile from '../model/Tile';
+import * as buildModel from '../model/Building';
+import * as tileModel from '../model/Tile';
+import { getSelection } from './ShopSelectionCache';
 
 let startingCashGrowthRate;
 let startingClickValue;
@@ -104,15 +105,19 @@ export function addClickCashListener(callback, scene) {
     });
 }
 
-export function getCashRates(jsonCache, tileMap) {
+export function getCashRates(tileMap) {
     let cashGrowthRate = startingCashGrowthRate;
     let clickValue = startingClickValue;
     for (let x = 0; x < tileMap.length; x++) {
         for (let y = 0; y < tileMap[x].length; y++) {
-            cashGrowthRate += build.getBuildingCashGrowthRate(jsonCache.get('buildings'), tileMap, x, y);
-            cashGrowthRate += tile.getTileCashGrowthRate(jsonCache.get('tiles'), tileMap, x, y);
-            clickValue += build.getBuildingClickValue(jsonCache.get('buildings'), tileMap, x, y);
-            clickValue += tile.getTileClickValue(jsonCache.get('tiles'), tileMap, x, y);
+            let building = tileMap[x][y].building;
+            let tile = tileMap[x][y].tile;
+            if (building) {
+                cashGrowthRate += buildModel.getBuildingCashGrowthRate(getSelection(building), tileMap, x, y);
+                clickValue += buildModel.getBuildingClickValue(getSelection(building), tileMap, x, y);
+            }
+            cashGrowthRate += tileModel.getTileCashGrowthRate(getSelection(tile), tileMap, x, y);
+            clickValue += tileModel.getTileClickValue(getSelection(tile), tileMap, x, y);
         }
     }
     return {
@@ -121,8 +126,8 @@ export function getCashRates(jsonCache, tileMap) {
     };
 }
 
-export function updateCashRates(jsonCache, tileMap) {
-    let rates = getCashRates(jsonCache, tileMap);
+export function updateCashRates(tileMap) {
+    let rates = getCashRates(tileMap);
     setCashGrowthRate(rates.cashGrowthRate);
     setClickCashValue(rates.clickValue);
 }

@@ -1,10 +1,9 @@
 import { getAdjacentCoordinates } from '../state/MapState';
 
-export function getTileCashGrowthRate(tilesJson, map, x, y) {
-    if (!map[x][y].tile) {
+export function getTileCashGrowthRate(tile, map, x, y) {
+    if (!tile) {
         return 0;
     }
-    let tile = tilesJson[map[x][y].tile];
     let baseCashGrowthRate = tile['baseCashGrowthRate'];
 
     switch (tile['name']) {
@@ -28,11 +27,9 @@ export function getTileCashGrowthRate(tilesJson, map, x, y) {
     return baseCashGrowthRate;
 }
 
-export function getTileClickValue(tilesJson, map, x, y) {
-    if (!map[x][y].tile) {
+export function getTileClickValue(tile, map, x, y) {
+    if (!tile) {
         return 0;
     }
-    let tile = tilesJson[map[x][y].tile];
-    let baseClickValue = tile['baseClickValue'];
-    return baseClickValue;
+    return tile['baseClickValue'];
 }

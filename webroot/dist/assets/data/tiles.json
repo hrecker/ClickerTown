@@ -6,7 +6,8 @@
         "cost": 0.5,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
-        "startingTile": true
+        "startingTile": true,
+        "flatCost": true
     },
     "Concrete": {
         "name": "Concrete",
@@ -15,7 +16,8 @@
         "cost": 0.5,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
-        "startingTile": false
+        "startingTile": false,
+        "flatCost": true
     },
     "Grass": {
         "name": "Grass",

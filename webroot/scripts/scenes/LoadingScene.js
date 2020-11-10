@@ -1,6 +1,7 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
-import { initializeGame } from '../state/GameState';
+import { initializeGame, setPriceIncreaseRate } from '../state/GameState';
+import { loadSelections } from '../state/ShopSelectionCache';
 
 // Load json and assets
 export class LoadingScene extends Phaser.Scene {
@@ -68,6 +69,8 @@ export class LoadingScene extends Phaser.Scene {
         state.setStartingCashGrowthRate(this.cache.json.get('initials')['startingGrowthRate']);
         state.setStartingClickValue(this.cache.json.get('initials')['startingClickValue']);
         map.setDemolitionCostFraction(this.cache.json.get('initials')['demolishFraction']);
+        setPriceIncreaseRate(this.cache.json.get('initials')['priceIncreaseRate']);
+        loadSelections(this.cache.json);
 
         // Load assets
         // Building sprites

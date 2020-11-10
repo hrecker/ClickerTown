@@ -9,6 +9,8 @@ export const musicEnabledKey = 'musicEnabled';
 export const soundEnabledKey = 'soundEnabled';
 let gameResetCallbacks = [];
 
+let priceIncreaseRate = 1;
+
 export function saveGame() {
     localStorage.setItem(mapKey, JSON.stringify(getMap()));
     localStorage.setItem(cashKey, state.getCurrentCashDecicents());
@@ -25,7 +27,7 @@ export function initializeGame(jsonCache, forceReinitialize) {
         // Load saved values
         setMap(JSON.parse(savedMap));
         state.setCurrentCashDecicents(savedCash);
-        state.updateCashRates(jsonCache, getMap());
+        state.updateCashRates(getMap());
         setMapRotation(Number(savedRotation));
         // Default to enabling sound/music
         setMusicEnabled(musicEnabled == 'true' || musicEnabled === null);
@@ -52,4 +54,12 @@ export function addGameResetListener(callback, scene) {
         callback: callback,
         scene: scene
     });
+}
+
+export function setPriceIncreaseRate(rate) {
+    priceIncreaseRate = rate;
+}
+
+export function getPriceIncreaseRate() {
+    return priceIncreaseRate;
 }
