@@ -271,17 +271,17 @@ export class UIScene extends Phaser.Scene {
             // If the player should be able to select this option then make it active
             if (getType(this.shopItems[i].selection) == ShopSelectionType.DEMOLITION || 
                     getPrice(this.shopItems[i].selection) <= currentCash) {
-                this.shopItems[i].sprite.alpha = 1;
                 if (!this.shopItems[i].selectionBox.input.enabled) {
+                    this.shopItems[i].sprite.alpha = 1;
                     // If shop item is unlocking just now, then play a little sound
                     audio.playSound(this, "shopUnlock", 0.75);
-                }
-                this.shopItems[i].selectionBox.setInteractive();
-                if (getType(this.shopItems[i].selection) != ShopSelectionType.DEMOLITION) {
-                    this.shopItems[i].priceText.setColor("#ffffff");
+                    this.shopItems[i].selectionBox.setInteractive();
+                    if (getType(this.shopItems[i].selection) != ShopSelectionType.DEMOLITION) {
+                        this.shopItems[i].priceText.setColor("#ffffff");
+                    }
                 }
             // Otherwise prevent selecting this option
-            } else {
+            } else if(this.shopItems[i].selectionBox.input.enabled) {
                 this.shopItems[i].sprite.alpha = 0.5;
                 this.shopItems[i].priceText.setColor("#ff6666");
                 this.shopItems[i].selectionBox.disableInteractive();
@@ -292,11 +292,11 @@ export class UIScene extends Phaser.Scene {
         }
         
         // Update bounds if player can afford everything
-        if (!shopPricesFound && currentCash >= shopPrices[shopPrices.length - 1]) {
+        if (!shopPricesFound && currentCash >= shopPrices[shopPrices.length - 1].price) {
             this.shopPriceBounds.below = shopPrices[shopPrices.length - 1].price;
             this.shopPriceBounds.belowSelection = shopPrices[shopPrices.length - 1].selection;
             this.shopPriceBounds.above = Number.MAX_VALUE;
-            this.shopPriceBounds.aboveSelecttion = null;
+            this.shopPriceBounds.aboveSelection = null;
         }
     }
 
