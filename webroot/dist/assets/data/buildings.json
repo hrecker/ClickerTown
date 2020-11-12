@@ -7,7 +7,7 @@
         "sprite90": "house90.png",
         "sprite180": "house180.png",
         "sprite270": "house270.png",
-        "cost": 25,
+        "cost": 15,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 0.25,
         "baseClickValue": 0
@@ -20,7 +20,7 @@
         "sprite90": "restaurant90.png",
         "sprite180": "restaurant180.png",
         "sprite270": "restaurant270.png",
-        "cost": 150,
+        "cost": 115,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": -1,
         "baseClickValue": 0.1
@@ -34,7 +34,7 @@
         "sprite90": "convenienceStore90.png",
         "sprite180": "convenienceStore180.png",
         "sprite270": "convenienceStore270.png",
-        "cost": 250,
+        "cost": 175,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 1.5,
         "baseClickValue": 2
@@ -44,7 +44,7 @@
         "tileName": "Concrete",
         "description": "-$1/second for each House within 3 tiles.",
         "sprite": "warehouse.png",
-        "cost": 500,
+        "cost": 400,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 3,
         "baseClickValue": 0.5

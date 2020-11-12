@@ -23,7 +23,7 @@
         "name": "Grass",
         "description": "+$0.10/second for each adjacent Grass",
         "sprite": "landscapeTiles_067.png",
-        "cost": 25,
+        "cost": 15,
         "baseCashGrowthRate": 0.1,
         "baseClickValue": 0,
         "startingTile": false
@@ -32,7 +32,7 @@
         "name": "Sand",
         "description": "+$0.50/second when located on the edge of the map",
         "sprite": "landscapeTiles_059.png",
-        "cost": 50,
+        "cost": 30,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
         "startingTile": true
