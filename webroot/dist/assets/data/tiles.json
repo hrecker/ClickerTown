@@ -2,7 +2,7 @@
     "Dirt": {
         "name": "Dirt",
         "description": "It's dirt. Nothing special about it.",
-        "sprite": "landscapeTiles_083.png",
+        "sprite": "dirt.png",
         "cost": 0.5,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
@@ -12,7 +12,7 @@
     "Concrete": {
         "name": "Concrete",
         "description": "A sturdy foundation.",
-        "sprite": "cityTiles_072.png",
+        "sprite": "concrete.png",
         "cost": 0.5,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
@@ -22,7 +22,7 @@
     "Grass": {
         "name": "Grass",
         "description": "+$0.10/second for each adjacent Grass",
-        "sprite": "landscapeTiles_067.png",
+        "sprite": "grass.png",
         "cost": 15,
         "baseCashGrowthRate": 0.1,
         "baseClickValue": 0,
@@ -31,7 +31,7 @@
     "Sand": {
         "name": "Sand",
         "description": "+$0.50/second when located on the edge of the map",
-        "sprite": "landscapeTiles_059.png",
+        "sprite": "sand.png",
         "cost": 30,
         "baseCashGrowthRate": 0,
         "baseClickValue": 0,
