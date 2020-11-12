@@ -17,17 +17,20 @@ export function loadSelections(jsonCache) {
     demolition.cost = 0;
     demolition.flatCost = true;
     demolition.shopSelectionType = ShopSelectionType.DEMOLITION;
+    demolition.shopPriceCache = {};
     selections['bomb'] = demolition;
     // Buildings
     for (let buildingName in jsonCache.get('buildings')) {
         selections[buildingName] = jsonCache.get('buildings')[buildingName];
         selections[buildingName].shopSelectionType = 
             ShopSelectionType[jsonCache.get('buildings')[buildingName]['shopSelectionType']];
+        selections[buildingName].shopPriceCache = {};
     }
     // Tiles
     for (let tileName in jsonCache.get('tiles')) {
         selections[tileName] = jsonCache.get('tiles')[tileName];
         selections[tileName].shopSelectionType = ShopSelectionType.TILE_ONLY;
+        selections[tileName].shopPriceCache = {};
     }
 }
 
@@ -57,16 +60,21 @@ export function getType(selectionName) {
 }
 
 export function getPrice(selectionName) {
-    let basePrice = selections[selectionName]['cost'];
-    if (isFlatCost(selectionName)) {
-        return basePrice;
+    if (selectionName == 'bomb' || isFlatCost(selectionName)) {
+        return selections[selectionName]['cost'];
     }
 
     let placementCount = getPlacementCount(selectionName);
+    if (selections[selectionName].shopPriceCache.hasOwnProperty(placementCount)) {
+        return selections[selectionName].shopPriceCache[placementCount];
+    }
+
+    let basePrice = selections[selectionName]['cost'];
     let price = Math.floor(basePrice * Math.pow(getPriceIncreaseRate(), placementCount));
     if (price == basePrice && placementCount > 0) {
         price++;
     }
+    selections[selectionName].shopPriceCache[placementCount] = price;
     return price;
 }
 

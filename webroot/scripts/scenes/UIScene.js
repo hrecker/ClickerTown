@@ -463,7 +463,6 @@ export class UIScene extends Phaser.Scene {
 
         let priceTexts = this.priceTexts[selection];
         if (priceTexts) {
-            //TODO see if it's faster to compare text first to avoid unnecessary setText calls
             formatPhaserCashText(priceTexts['tooltipPriceText'], getPrice(selection), "", false, true);
             priceTexts['shopPriceText'].setText(formatCash(getPrice(selection), true));
         }
