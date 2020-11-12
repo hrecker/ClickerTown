@@ -2,7 +2,7 @@ import * as state from '../state/CashState';
 import { rotateClockwise, addPlacementListener } from '../state/MapState';
 import { setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
-import { formatCash, isBlank, formatPhaserCashText } from '../util/Util';
+import { formatCash, formatLargeCash, isBlank, formatPhaserCashText } from '../util/Util';
 import * as audio from '../state/AudioState';
 import { getSelections, getSelectionProp, ShopSelectionType, getType, getPrice, isFlatCost } from '../state/ShopSelectionCache';
 
@@ -140,7 +140,7 @@ export class UIScene extends Phaser.Scene {
                 this.add.rectangle(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4,
                     selectionBoxSize + 3, selectionBoxSize / 4 + 1, 0x000000).setOrigin(0).setAlpha(0.5);
                 let priceText = this.add.text(this.shopItems[i].selectionBox.getTopLeft().x, position.y + selectionBoxSize / 4, 	
-                    formatCash(getPrice(this.shopItems[i].selection), true), shopPriceStyle);
+                    formatLargeCash(getPrice(this.shopItems[i].selection)), shopPriceStyle);
                 this.shopItems[i].priceText = priceText;
                 this.priceTexts[this.shopItems[i].selection] = {};
                 this.priceTexts[this.shopItems[i].selection]["shopPriceText"] = priceText;
@@ -464,7 +464,7 @@ export class UIScene extends Phaser.Scene {
         let priceTexts = this.priceTexts[selection];
         if (priceTexts) {
             formatPhaserCashText(priceTexts['tooltipPriceText'], getPrice(selection), "", false, true);
-            priceTexts['shopPriceText'].setText(formatCash(getPrice(selection), true));
+            priceTexts['shopPriceText'].setText(formatLargeCash(getPrice(selection)));
         }
     }
 

@@ -31,6 +31,18 @@ export function formatCash(cashValue, stripCents) {
     return result;
 }
 
+// Handle large cash values, using works for values above 1 billion or 1 million.
+// Doubt this will every actually matter.
+export function formatLargeCash(cashValue) {
+    if (cashValue >= 1000000000) { // tres comas
+        return formatCash(cashValue / 1000000000, false) + "b";
+    }
+    if (cashValue >= 1000000) { // millions
+        return formatCash(cashValue / 1000000, false) + "m";
+    }
+    return formatCash(cashValue, true);
+}
+
 export function formatPhaserCashText(textObject, cashValue, suffix, includePrefix, invertColor) {
     let prefix = "";
     if (cashValue > 0.001) {
