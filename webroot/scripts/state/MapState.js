@@ -1,5 +1,5 @@
-import { ShopSelectionType } from '../state/ShopSelectionCache';
-import { getSelectionProp, getPrice, getType, getTileName } from '../state/ShopSelectionCache';
+import { ShopSelectionType } from './ShopSelectionCache';
+import { getSelectionProp, getPrice, getType, getTileName } from './ShopSelectionCache';
 
 // Map is a 2D array of objects containing up to two properties	
 // "tile": name of the tile in this location	

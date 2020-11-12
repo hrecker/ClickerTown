@@ -12,6 +12,11 @@ let currentCashCallbacks = [];
 let cashGrowthCallbacks = [];
 let clickCashCallbacks = [];
 
+// Cache for cash rates when hovering a selected building over different squares
+let cashRateCache = {};
+let cashRateCacheSize = 0;
+const cashRateCacheSizeLimit = 2500;
+
 export function setStartingCashGrowthRate(growthRate) {
     startingCashGrowthRate = growthRate;
 }
@@ -105,7 +110,17 @@ export function addClickCashListener(callback, scene) {
     });
 }
 
+function invalidateCashRateCache() {
+    cashRateCache = {};
+    cashRateCacheSize = 0;
+}
+
 export function getCashRates(tileMap) {
+    let cacheKey = JSON.stringify(tileMap);
+    if (cashRateCache.hasOwnProperty(cacheKey)) {
+        return cashRateCache[cacheKey];
+    }
+
     let cashGrowthRate = startingCashGrowthRate;
     let clickValue = startingClickValue;
     for (let x = 0; x < tileMap.length; x++) {
@@ -120,10 +135,19 @@ export function getCashRates(tileMap) {
             clickValue += tileModel.getTileClickValue(getSelection(tile), tileMap, x, y);
         }
     }
-    return {
+    let result = {
         cashGrowthRate: cashGrowthRate,
         clickValue: clickValue
     };
+
+    // Prevent cache from growing indefinitely
+    if (cashRateCacheSize >= cashRateCacheSizeLimit) {
+        invalidateCashRateCache();
+    }
+
+    cashRateCacheSize++;
+    cashRateCache[cacheKey] = result;
+    return result;
 }
 
 export function updateCashRates(tileMap) {
