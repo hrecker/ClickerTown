@@ -116,6 +116,7 @@ function invalidateCashRateCache() {
 }
 
 export function getCashRates(tileMap) {
+    //TODO may this more efficient (only look 5 tiles in any direction) when mousing selection over map, to handle huge maps
     let cacheKey = JSON.stringify(tileMap);
     if (cashRateCache.hasOwnProperty(cacheKey)) {
         return cashRateCache[cacheKey];

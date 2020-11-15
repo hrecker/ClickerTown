@@ -31,9 +31,11 @@ export function formatCash(cashValue, stripCents) {
     return result;
 }
 
-// Handle large cash values, using works for values above 1 billion or 1 million.
-// Doubt this will every actually matter.
+// Handle large cash values, using works for values above 1 trillion/billion/million.
 export function formatLargeCash(cashValue) {
+    if (cashValue >= 1000000000000) { // trillion
+        return formatCash(cashValue / 1000000000000, false) + "t";
+    }
     if (cashValue >= 1000000000) { // tres comas
         return formatCash(cashValue / 1000000000, false) + "b";
     }

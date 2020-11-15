@@ -1,10 +1,10 @@
 import * as state from '../state/CashState';
-import { rotateClockwise, addPlacementListener } from '../state/MapState';
+import { rotateClockwise, addPlacementListener, extendMap } from '../state/MapState';
 import { setShopSelection, getShopSelection, isInDialog, setInDialog } from '../state/UIState';
 import { addGameResetListener, saveGame, resetGame } from '../state/GameState';
 import { formatCash, formatLargeCash, isBlank, formatPhaserCashText } from '../util/Util';
 import * as audio from '../state/AudioState';
-import { getSelections, getSelectionProp, ShopSelectionType, getType, getPrice, isFlatCost } from '../state/ShopSelectionCache';
+import { getSelections, getSelectionProp, ShopSelectionType, getType, getPrice, isFlatCost, getExpandPrice } from '../state/ShopSelectionCache';
 
 const imageScale = 0.48;
 const topShopSelectionY = 90;
@@ -122,7 +122,7 @@ export class UIScene extends Phaser.Scene {
         }
 
         this.priceTexts = {};
-        for (let i = 0; i < this.shopItems.length; i++) {
+        for (let i = 0; i < this.shopItems.length - 1; i++) {
             let position = this.getSelectionPosition(i);
             this.shopItems[i].selectionBox = this.add.nineslice(position.x, position.y, 100, 100, 'greyPanel', 7).setOrigin(0.5);
             this.shopItems[i].selectionBox.setScale(selectionBoxScale);
@@ -147,6 +147,42 @@ export class UIScene extends Phaser.Scene {
                 this.shopItems[i].priceText.setFixedSize(selectionBoxSize, selectionBoxSize / 2);
             }
         }
+
+        // Map extension button
+        let index = this.shopItems.length - 1;
+        let position = this.getSelectionPosition(index);
+        position.x += 40;
+        position.y -= 17;
+        this.shopItems[index].selectionBox = this.add.nineslice(position.x, position.y, 210, 60, 'greyPanel', 7).setOrigin(0.5);
+        this.shopItems[index].selectionBox.setScale(selectionBoxScale);
+        this.shopItems[index].sprite = this.add.image(position.x - 46, position.y - 7, "expand").setOrigin(1, 0.5).setScale(0.6);
+        this.shopItems[index].text = this.add.text(position.x + 12, position.y - 6, "Expand map", 
+            { font: "bold 16px Verdana", fill: "#000000" }).setOrigin(0.5);
+        this.shopItems[index].selectionBox.setInteractive();
+        this.shopItems[index].selectionBox.on("pointerdown", () => {
+            let price = getExpandPrice();
+            if (state.getCurrentCash() >= price) {
+                audio.playSound(this, 'expandMap');
+                extendMap();
+                state.addCurrentCash(-1 * price);
+                this.placementListener(["expand"], this);
+            }
+        });
+        this.shopItems[index].selectionBox.on("pointerover", () => { 
+            if (isInDialog()) {
+                return;
+            }
+            this.tooltips[index].setVisible(true);
+        });
+        this.shopItems[index].selectionBox.on("pointerout", () => { this.tooltips[index].setVisible(false); });
+        this.add.rectangle(this.shopItems[index].selectionBox.getTopLeft().x, position.y + 6,
+            152, 16, 0x000000).setOrigin(0).setAlpha(0.5);
+        let priceText = this.add.text(this.shopItems[index].selectionBox.getTopLeft().x, position.y + 6, 	
+            formatLargeCash(getExpandPrice()), shopPriceStyle);
+        priceText.setFixedSize(152, 16);
+        this.priceTexts[this.shopItems[index].selection] = {};
+        this.priceTexts[this.shopItems[index].selection]["shopPriceText"] = priceText;
+        this.shopItems[index].priceText = priceText;
 
         // Shop selection highlight
         let selectedPosition = this.getSelectionPosition(0);
@@ -273,6 +309,9 @@ export class UIScene extends Phaser.Scene {
                     getPrice(this.shopItems[i].selection) <= currentCash) {
                 if (!this.shopItems[i].selectionBox.input.enabled) {
                     this.shopItems[i].sprite.alpha = 1;
+                    if (this.shopItems[i].selection == "expand") {
+                        this.shopItems[i].text.alpha = 1;
+                    }
                     // If shop item is unlocking just now, then play a little sound
                     audio.playSound(this, "shopUnlock", 0.75);
                     this.shopItems[i].selectionBox.setInteractive();
@@ -287,6 +326,9 @@ export class UIScene extends Phaser.Scene {
                 this.shopItems[i].selectionBox.disableInteractive();
                 if (getShopSelection() == this.shopItems[i].selection) {
                     this.clearShopSelection();
+                }
+                if (this.shopItems[i].selection == "expand") {
+                    this.shopItems[i].text.alpha = 0.5;
                 }
             }
         }
@@ -346,7 +388,16 @@ export class UIScene extends Phaser.Scene {
                 tooltipGrowthRate.setText("");
                 tooltipClickValue.setText("");
                 tooltipDescription.setText("");
-            } else {    
+            } else if (getType(this.shopItems[i].selection) == ShopSelectionType.EXPAND_MAP) {
+                tooltipTitle.setText("Expand map");
+                formatPhaserCashText(tooltipPrice, getPrice(this.shopItems[i].selection), "", false, true);
+                this.priceTexts[this.shopItems[i].selection]["tooltipPriceText"] = tooltipPrice;
+                tooltipGrowthRate.setText("Add a set of new tiles to the map");
+                // Hide unneeded text and breaks
+                tooltipRatesBreak.setAlpha(0);
+                tooltipClickValue.setText("");
+                tooltipDescription.setText("");
+            } else {
                 this.priceTexts[this.shopItems[i].selection]["tooltipPriceText"] = tooltipPrice;
                 tooltipTitle.setText(this.shopItems[i].selection);
                 formatPhaserCashText(tooltipPrice, getPrice(this.shopItems[i].selection), "", false, true);

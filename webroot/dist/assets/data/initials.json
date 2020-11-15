@@ -1,9 +1,11 @@
 {
-    "startingCash": 0,
+    "startingCash": 100000000,
     "startingGrowthRate": 0,
     "startingClickValue": 1,
     "mapWidth": 7,
     "mapHeight": 7,
     "demolishFraction": 0.5,
-    "priceIncreaseRate": 1.1
+    "priceIncreaseRate": 1.1,
+    "expandBasePrice": 250000,
+    "expandPriceIncreaseRate": 1.25
 }

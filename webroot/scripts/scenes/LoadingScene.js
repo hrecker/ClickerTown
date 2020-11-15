@@ -1,7 +1,7 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
 import { initializeGame, setPriceIncreaseRate } from '../state/GameState';
-import { loadSelections } from '../state/ShopSelectionCache';
+import { loadSelections, setExpandBasePrice, setExpandPriceIncreaseRate } from '../state/ShopSelectionCache';
 
 // Load json and assets
 export class LoadingScene extends Phaser.Scene {
@@ -51,6 +51,7 @@ export class LoadingScene extends Phaser.Scene {
         this.load.image('soundOnButtonDown', 'assets/sprites/ui/sound_on_button_down.png');
         this.load.image('soundOffButton', 'assets/sprites/ui/sound_off_button.png');
         this.load.image('soundOffButtonDown', 'assets/sprites/ui/sound_off_button_down.png');
+        this.load.image('expand', 'assets/sprites/ui/expand.png');
 
         // Load audio
         this.load.audio('backgroundMusic', 'assets/sound/music/Puzzle-Dreams.mp3');
@@ -62,6 +63,7 @@ export class LoadingScene extends Phaser.Scene {
         this.load.audio('shopDeselect', 'assets/sound/sfx/shop_deselect.ogg');
         this.load.audio('shopSelect', 'assets/sound/sfx/shop_select.ogg');
         this.load.audio('shopUnlock', 'assets/sound/sfx/shop_unlock.ogg');
+        this.load.audio('expandMap', 'assets/sound/sfx/expand_map.ogg');
     }
 
     create() {
@@ -71,6 +73,8 @@ export class LoadingScene extends Phaser.Scene {
         map.setDemolitionCostFraction(this.cache.json.get('initials')['demolishFraction']);
         setPriceIncreaseRate(this.cache.json.get('initials')['priceIncreaseRate']);
         loadSelections(this.cache.json);
+        setExpandBasePrice(this.cache.json.get('initials')['expandBasePrice']);
+        setExpandPriceIncreaseRate(this.cache.json.get('initials')['expandPriceIncreaseRate']);
 
         // Load assets
         // Building sprites

@@ -33,5 +33,7 @@ Initials
 - mapWidth: width of map in tiles
 - mapHeight: height of map in tiles
 - demolishFraction: fraction of building cost paid to demolish a building
-- priceIncreaseRate: multiplier for price increase after each building purchase. Resulting price will be rounded up.
+- priceIncreaseRate: multiplier for price increase after each building purchase. Resulting price will be floored.
+- expandBasePrice: base price of expanding the map
+- expandPriceIncreaseRate: multiplier for price increase after each map expansion. Resulting price will be floored.
 

@@ -1,5 +1,6 @@
 import { ShopSelectionType } from './ShopSelectionCache';
 import { getSelectionProp, getPrice, getType, getTileName } from './ShopSelectionCache';
+import { updateCashRates } from './CashState';
 
 // Map is a 2D array of objects containing up to two properties	
 // "tile": name of the tile in this location	
@@ -9,11 +10,22 @@ let map;
 let demolitionCostFraction;
 let mapRotation;
 let mapRotationCallbacks = [];
+let mapExtendCallbacks = [];
 let placementCallbacks = [];
 let placementCounts = {};
 
+const defaultMapSize = 7;
+
 export function setDemolitionCostFraction(costFraction) {
     demolitionCostFraction = costFraction;
+}
+
+function getDefaultTile() {
+    return { 
+        "tile": 'Dirt',
+        "building": null,
+        "rotation": 0
+    };
 }
 
 export function initializeMap(width, height) {
@@ -21,11 +33,7 @@ export function initializeMap(width, height) {
     for (let x = 0; x < width; x++) {
         map[x] = new Array(height);
         for (let y = 0; y < height; y++) {
-            map[x][y] = { 
-                "tile": 'Dirt',
-                "building": null,
-                "rotation": 0
-            };
+            map[x][y] = getDefaultTile();
         }
     }
     updatePlacementCounts();
@@ -90,6 +98,13 @@ export function getMapRotation() {
 
 export function addMapRotationListener(callback, scene) {
     mapRotationCallbacks.push({ 
+        callback: callback,
+        scene: scene
+    });
+}
+
+export function addMapExtendListener(callback, scene) {
+    mapExtendCallbacks.push({ 
         callback: callback,
         scene: scene
     });
@@ -174,4 +189,63 @@ export function canPlaceShopSelection(selection, x, y) {
         ((map[x][y].building && getType(selection) == ShopSelectionType.DEMOLITION) ||
         (!map[x][y].building && getType(selection) != ShopSelectionType.DEMOLITION &&
         (getType(selection) != ShopSelectionType.TILE_ONLY || map[x][y].tile != selection)));
+}
+
+// Extend the map by one row and one column, adding the default tiles
+export function extendMap() {
+    let newWidth = map.length + 1;
+    let newHeight = map[0].length + 1;
+
+    // Always extend upwards, so the player has some choice in the new tile location via rotating the map
+    if (mapRotation == 90) {
+        // Insert new x row, append to y columns
+        map.unshift(new Array(newHeight - 1));
+        for (let y = 0; y < newHeight - 1; y++) {
+            map[0][y] = getDefaultTile();
+        }
+        for (let x = 0; x < newWidth; x++) {
+            map[x][newHeight - 1] = getDefaultTile();
+        }
+    } else if (mapRotation == 180) {
+        // Insert new x row, insert new y column
+        map.unshift(new Array(newHeight - 1));
+        for (let y = 0; y < newHeight - 1; y++) {
+            map[0][y] = getDefaultTile();
+        }
+        for (let x = 0; x < newWidth; x++) {
+            map[x].unshift(getDefaultTile());
+        }
+    } else if (mapRotation == 270) {
+        // Append to x rows, insert new y column
+        map[newWidth - 1] = new Array(newHeight - 1);
+        for (let y = 0; y < newHeight - 1; y++) {
+            map[newWidth - 1][y] = getDefaultTile();
+        }
+        for (let x = 0; x < newWidth; x++) {
+            map[x].unshift(getDefaultTile());
+        }
+    } else { // 0 rotation
+        // Append to x rows, append to y rows
+        map[newWidth - 1] = new Array(newHeight);
+        for (let y = 0; y < newHeight; y++) {
+            map[newWidth - 1][y] = getDefaultTile();
+        }
+        for (let x = 0; x < newWidth - 1; x++) {
+            map[x][newHeight - 1] = getDefaultTile();
+        }
+    } 
+
+    // Update cash per second and click cash
+    // Note, this currently doesn't call any placement listeners, but maybe it
+    // will need to in the future if there are more placement listeners
+    updatePlacementCounts();
+    updateCashRates(map);
+
+    mapExtendCallbacks.forEach(callback => 
+        callback.callback(callback.scene));
+}
+
+// Get the number of times the map has expanded
+export function getExpansionCount() {
+    return map.length - defaultMapSize;
 }

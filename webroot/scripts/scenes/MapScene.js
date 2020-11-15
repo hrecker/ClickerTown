@@ -17,6 +17,7 @@ const previewWidth = 200;
 const previewHeight = 125;
 const previewTextMargin = 7;
 const clickParticlesRateMs = 50;
+const defaultZoom = 0.85;
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -40,6 +41,7 @@ export class MapScene extends Phaser.Scene {
 
         // Blocks
         map.addMapRotationListener(this.mapRotationListener, this);
+        map.addMapExtendListener(this.mapExtendListener, this);
         this.createTileMap();
         this.syncTileMap();
         state.updateCashRates(map.getMap());
@@ -74,9 +76,8 @@ export class MapScene extends Phaser.Scene {
         this.shopSelectionRotation = 0;
 
         // Camera control
-        let originalX = this.cameras.main.centerX;
-        this.cameras.main.centerOnX(this.mapOriginX);
-        this.cameras.main.setPosition(this.mapOriginX - originalX, 0);
+        this.originalMapHeight = this.mapHeight;
+        this.setCameraPosition();
         var controlConfig = {
             camera: this.cameras.main,
             left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
@@ -90,7 +91,6 @@ export class MapScene extends Phaser.Scene {
             maxSpeed: 1.0
         };
         this.controls = new Phaser.Cameras.Controls.SmoothedKeyControl(controlConfig);
-        this.cameras.main.setZoom(0.85);
 
         // Cash rate preview for new buildings, and info on existing buildings/tiles
         this.createPreview();
@@ -100,9 +100,24 @@ export class MapScene extends Phaser.Scene {
         scene.syncTileMap();
     }
 
+    mapExtendListener(scene) {
+        scene.updateRotationMatrices();
+        scene.syncTileMap();
+    }
+
     // If the game is reset, will need to update all displayed sprites appropriately
     gameResetListener(scene) {
+        scene.resetRotationMatrices();
         scene.syncTileMap();
+        scene.setCameraPosition();
+    }
+
+    setCameraPosition() {
+        let cameraCenter = this.displayTileCoordinatesToWorldCoordinates(0, 0);
+        this.cameras.main.centerOn(cameraCenter.x, cameraCenter.y);
+        // Update scroll Y when game is reset
+        this.cameras.main.setScroll(0, (this.originalMapHeight - this.mapHeight) * blockImageHeight / 3);
+        this.cameras.main.setZoom(defaultZoom);
     }
 
     // Origin of tile map coordinates is the tile closest to the bottom of the screen.
@@ -139,17 +154,91 @@ export class MapScene extends Phaser.Scene {
         }
     }
 
+    resetRotationMatrices() {
+        this.tileMapR90 = new Array(this.mapHeight);
+        this.tileMapR180 = new Array(this.mapWidth);
+        this.tileMapR270 = new Array(this.mapHeight);
+        this.updateRotationMatrices();
+    }
+
+    // Update rotation matrices after the map is extended
+    updateRotationMatrices() {
+        let mapWidth = map.getMap().length;
+        let mapHeight = map.getMap()[0].length;
+
+        for (let x = 0; x < mapWidth; x++) {
+            if (!this.tileMapR90[x]) {
+                this.tileMapR90[x] = new Array(mapWidth);
+                this.tileMapR180[x] = new Array(mapHeight);
+                this.tileMapR270[x] = new Array(mapWidth);
+            }
+            for (let y = 0; y < mapHeight; y++) {
+                this.tileMapR90[x][y] = new Phaser.Math.Vector2(mapHeight - y - 1, x);
+                this.tileMapR180[x][y] = new Phaser.Math.Vector2(mapWidth - x - 1  , mapHeight - y - 1);
+                this.tileMapR270[x][y] = new Phaser.Math.Vector2(y, mapWidth - x - 1);
+            }
+        }
+    }
+
     // Update displayed sprites to reflect the actual contents of the current tile map
     syncTileMap() {
+        let tileMap = map.getMap();
+        let previousWidth = this.mapWidth;
+        let previousHeight = this.mapHeight;
+        this.mapWidth = tileMap.length;
+        this.mapHeight = tileMap[0].length;
+
+        // Remove old images if map has shrunk (from a game reset)
+        if (previousWidth > this.mapWidth || previousHeight > this.mapHeight) {
+            for (let x = this.mapWidth; x < previousWidth; x++) {
+                for (let y = 0; y < this.tileMapImages[x].length; y++) {
+                    this.tileMapImages[x][y].destroy();
+                    this.buildingImages[x][y].destroy();
+                }
+            }
+            this.tileMapImages.splice(this.mapWidth, previousWidth - this.mapWidth);
+            this.buildingImages.splice(this.mapWidth, previousWidth - this.mapWidth);
+
+            for (let x = 0; x < this.mapWidth; x++) {
+                for (let y = this.mapHeight; y < previousHeight; y++) {
+                    this.tileMapImages[x][y].destroy();
+                    this.buildingImages[x][y].destroy();
+                }
+                this.tileMapImages[x].splice(this.mapHeight, previousHeight - this.mapHeight);
+                this.buildingImages[x].splice(this.mapHeight, previousHeight - this.mapHeight);
+            }
+        }
+
         for (let x = this.mapWidth - 1; x >= 0; x--) {
+            // Add new rows if necessary
+            if (!this.tileMapImages[x]) {
+                this.tileMapImages[x] = new Array(this.mapHeight);
+                this.buildingImages[x] = new Array(this.mapHeight);
+            }
+
             for (let y = this.mapHeight - 1; y >= 0; y--) {
                 let mapCoords = this.displayToMapCoordinates(x, y);
-                let building = map.getMap()[mapCoords.x][mapCoords.y].building;
-                let rotation = (map.getMap()[mapCoords.x][mapCoords.y].rotation + map.getMapRotation()) % 360;
+                let tileCoords = this.displayTileCoordinatesToWorldCoordinates(x, y);
+                let building = tileMap[mapCoords.x][mapCoords.y].building;
+                let rotation = (tileMap[mapCoords.x][mapCoords.y].rotation + map.getMapRotation()) % 360;
+
+                // Create new images if necessary
+                if (!this.tileMapImages[x][y]) {
+                    this.tileMapImages[x][y] = this.add.image(tileCoords.x, tileCoords.y, 
+                        tileMap[x][y].tile).setScale(tileScale).setOrigin(0.5, 1);
+                    this.tileMapImages[x][y].setDepth(-this.mapWidth);
+                    let buildingImage = this.add.image(tileCoords.x, tileCoords.y + buildingYDiff,
+                        '').setScale(tileScale).setOrigin(0.5, 1);
+                    buildingImage.setVisible(false);
+                    buildingImage.setDepth(-this.mapWidth);
+                    this.buildingImages[x][y] = buildingImage;
+                }
+
+                // Update image textures
                 if (building && getType(building) == ShopSelectionType.TILE_AND_BUILDING) {
                     this.tileMapImages[x][y].setTexture(this.getSelectionTextureName(building, rotation));
                 } else {
-                    this.tileMapImages[x][y].setTexture(map.getMap()[mapCoords.x][mapCoords.y].tile);
+                    this.tileMapImages[x][y].setTexture(tileMap[mapCoords.x][mapCoords.y].tile);
                     if (building) {
                         this.buildingImages[x][y].setTexture(this.getSelectionTextureName(building, rotation));
                         this.buildingImages[x][y].setVisible(true);

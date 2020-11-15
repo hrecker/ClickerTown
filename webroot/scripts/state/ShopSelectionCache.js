@@ -1,15 +1,17 @@
 import { getPriceIncreaseRate } from './GameState';
-import { getPlacementCount } from "./MapState";
+import { getPlacementCount, getExpansionCount } from "./MapState";
 
 export const ShopSelectionType = Object.freeze({
     DEMOLITION: 0,
     TILE_ONLY: 1,
     BUILDING_ONLY: 2,
-    TILE_AND_BUILDING: 3
+    TILE_AND_BUILDING: 3,
+    EXPAND_MAP: 4
 });
 
 let selections = {};
-let i = 0;
+let expandBasePrice;
+let expandPriceIncreaseRate;
 
 export function loadSelections(jsonCache) {
     // Demolition
@@ -32,6 +34,12 @@ export function loadSelections(jsonCache) {
         selections[tileName].shopSelectionType = ShopSelectionType.TILE_ONLY;
         selections[tileName].shopPriceCache = {};
     }
+    // Expand map
+    let expand = {};
+    expand.cost = 0;
+    expand.shopSelectionType = ShopSelectionType.EXPAND_MAP;
+    expand.shopPriceCache = {};
+    selections['expand'] = expand;
 }
 
 export function getSelections() {
@@ -64,6 +72,10 @@ export function getPrice(selectionName) {
         return selections[selectionName]['cost'];
     }
 
+    if (selectionName == 'expand') {
+        return getExpandPrice();
+    }
+
     let placementCount = getPlacementCount(selectionName);
     if (selections[selectionName].shopPriceCache.hasOwnProperty(placementCount)) {
         return selections[selectionName].shopPriceCache[placementCount];
@@ -80,4 +92,16 @@ export function getPrice(selectionName) {
 
 export function isFlatCost(selectionName) {
     return selections[selectionName]['flatCost'];
+}
+
+export function setExpandBasePrice(basePrice) {
+    expandBasePrice = basePrice;
+}
+
+export function setExpandPriceIncreaseRate(increaseRate) {
+    expandPriceIncreaseRate = increaseRate;
+}
+
+export function getExpandPrice() {
+    return Math.floor(expandBasePrice * Math.pow(expandPriceIncreaseRate, getExpansionCount()));
 }
