@@ -555,7 +555,7 @@ export class MapScene extends Phaser.Scene {
             if (getType(this.currentShopSelection) == ShopSelectionType.DEMOLITION) {
                 this.hoverImage.setScale(tileScale / 2);
                 this.hoverImage.y += buildingYDiff;
-                this.showRangeHighlight(map.getPrimaryTileContents(displayTile.x, displayTile.y), displayTile.x, displayTile.y);
+                this.showRangeHighlight(map.getPrimaryTileContents(tile.x, tile.y), tile.x, tile.y);
             // Placing new tile, building, or both    
             } else {
                 this.hoverImage.setScale(tileScale);
@@ -564,14 +564,14 @@ export class MapScene extends Phaser.Scene {
                 } else {
                     this.tileMapImages[displayTile.x][displayTile.y].alpha = 0;
                 }
-                this.showRangeHighlight(this.currentShopSelection, displayTile.x, displayTile.y);
+                this.showRangeHighlight(this.currentShopSelection, tile.x, tile.y);
             }
         // Hide preview, or show stats for existing building
         } else {
             this.hoverImage.alpha = 0;
             if (this.areTileCoordinatesValid(displayTile.x, displayTile.y)) {
                 this.updatePreview(tile.x, tile.y, displayTile.x, displayTile.y, true);
-                this.showRangeHighlight(map.getPrimaryTileContents(displayTile.x, displayTile.y), displayTile.x, displayTile.y);
+                this.showRangeHighlight(map.getPrimaryTileContents(tile.x, tile.y), tile.x, tile.y);
             } else {
                 this.tilePreview.setVisible(false);
                 this.hideRangeHighlight();
@@ -587,7 +587,6 @@ export class MapScene extends Phaser.Scene {
         let range = getSelectionRange(selection);
         // Clear old highlights
         for (let tile of this.rangeHighlights) {
-            //TODO this could be more efficient
             if (this.areTileCoordinatesValid(tile.x, tile.y)) {
                 this.tileMapImages[tile.x][tile.y].setTint(0xffffff);
                 if (this.buildingImages[tile.x][tile.y].alpha == 1) {
@@ -597,10 +596,9 @@ export class MapScene extends Phaser.Scene {
         }
 
         // Show new highlights
-        let newRangeHighlights = [];
+        this.rangeHighlights = [];
         if (range > 0) {
-            newRangeHighlights = map.getTilesWithinRange(x, y, range);
-            for (let tile of newRangeHighlights) {
+            for (let tile of map.getTilesWithinRange(x, y, range)) {
                 // Highlight based on relationship between tiles/buildings
                 let tint = neutralRangeHighlight;
                 let relationship = getSelectionRelationship(selection,
@@ -611,13 +609,14 @@ export class MapScene extends Phaser.Scene {
                     tint = negativeRangeHighlight;
                 }
 
-                this.tileMapImages[tile.x][tile.y].setTint(tint);
-                if (this.buildingImages[tile.x][tile.y].alpha == 1) {
-                    this.buildingImages[tile.x][tile.y].setTint(tint);
+                let displayTile = this.mapToDisplayCoordinates(tile.x, tile.y);
+                this.tileMapImages[displayTile.x][displayTile.y].setTint(tint);
+                if (this.buildingImages[displayTile.x][displayTile.y].alpha == 1) {
+                    this.buildingImages[displayTile.x][displayTile.y].setTint(tint);
                 }
+                this.rangeHighlights.push(displayTile);
             }
         }
-        this.rangeHighlights = newRangeHighlights;
     }
 
     worldCoordinatesToDisplayTileCoordinates(x, y) {
