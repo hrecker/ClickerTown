@@ -555,6 +555,7 @@ export class MapScene extends Phaser.Scene {
             if (getType(this.currentShopSelection) == ShopSelectionType.DEMOLITION) {
                 this.hoverImage.setScale(tileScale / 2);
                 this.hoverImage.y += buildingYDiff;
+                this.showRangeHighlight(map.getPrimaryTileContents(displayTile.x, displayTile.y), displayTile.x, displayTile.y);
             // Placing new tile, building, or both    
             } else {
                 this.hoverImage.setScale(tileScale);
