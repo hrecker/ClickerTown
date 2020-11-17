@@ -6,7 +6,7 @@ import { addShopSelectionListener, isInDialog } from '../state/UIState';
 import { addGameResetListener } from '../state/GameState';
 import { formatCash, formatPhaserCashText, setTextColorIfNecessary } from '../util/Util';
 import * as audio from '../state/AudioState';
-import { getType, ShopSelectionType, getSelection, getSelectionProp } from '../state/ShopSelectionCache';
+import { getType, ShopSelectionType, SelectionRelationship, getSelection, getSelectionProp, getSelectionRange, getSelectionRelationship } from '../state/ShopSelectionCache';
 
 const tileScale = 1;
 const blockImageHeight = 100 * tileScale;
@@ -18,6 +18,9 @@ const previewHeight = 125;
 const previewTextMargin = 7;
 const clickParticlesRateMs = 50;
 const defaultZoom = 0.85;
+const positiveRangeHighlight = 0x6eff81;
+const negativeRangeHighlight = 0xff6e6e;
+const neutralRangeHighlight = 0xffea94;
 
 export class MapScene extends Phaser.Scene {
     constructor() {
@@ -94,6 +97,9 @@ export class MapScene extends Phaser.Scene {
 
         // Cash rate preview for new buildings, and info on existing buildings/tiles
         this.createPreview();
+
+        // Tiles highlighted to show building range
+        this.rangeHighlights = [];
     }
 
     mapRotationListener(mapRotation, scene) {
@@ -557,16 +563,60 @@ export class MapScene extends Phaser.Scene {
                 } else {
                     this.tileMapImages[displayTile.x][displayTile.y].alpha = 0;
                 }
+                this.showRangeHighlight(this.currentShopSelection, displayTile.x, displayTile.y);
             }
         // Hide preview, or show stats for existing building
         } else {
             this.hoverImage.alpha = 0;
             if (this.areTileCoordinatesValid(displayTile.x, displayTile.y)) {
                 this.updatePreview(tile.x, tile.y, displayTile.x, displayTile.y, true);
+                this.showRangeHighlight(map.getPrimaryTileContents(displayTile.x, displayTile.y), displayTile.x, displayTile.y);
             } else {
                 this.tilePreview.setVisible(false);
+                this.hideRangeHighlight();
             }
         }
+    }
+
+    hideRangeHighlight() {
+        this.showRangeHighlight(null, 0, 0);
+    }
+
+    showRangeHighlight(selection, x, y) {
+        let range = getSelectionRange(selection);
+        // Clear old highlights
+        for (let tile of this.rangeHighlights) {
+            //TODO this could be more efficient
+            if (this.areTileCoordinatesValid(tile.x, tile.y)) {
+                this.tileMapImages[tile.x][tile.y].setTint(0xffffff);
+                if (this.buildingImages[tile.x][tile.y].alpha == 1) {
+                    this.buildingImages[tile.x][tile.y].setTint(0xffffff);
+                }
+            }
+        }
+
+        // Show new highlights
+        let newRangeHighlights = [];
+        if (range > 0) {
+            newRangeHighlights = map.getTilesWithinRange(x, y, range);
+            for (let tile of newRangeHighlights) {
+                // Highlight based on relationship between tiles/buildings
+                let tint = neutralRangeHighlight;
+                let relationship = getSelectionRelationship(selection,
+                    map.getPrimaryTileContents(tile.x, tile.y));
+                if (relationship == SelectionRelationship.POSITIVE) {
+                    tint = positiveRangeHighlight;
+                } else if (relationship == SelectionRelationship.NEGATIVE) {
+                    tint = negativeRangeHighlight;
+                }
+
+                this.tileMapImages[tile.x][tile.y].setTint(tint);
+                if (this.buildingImages[tile.x][tile.y].alpha == 1) {
+                    this.buildingImages[tile.x][tile.y].setTint(tint);
+                }
+            }
+        }
+        this.rangeHighlights = newRangeHighlights;
     }
 
     worldCoordinatesToDisplayTileCoordinates(x, y) {

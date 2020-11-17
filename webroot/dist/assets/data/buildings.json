@@ -23,7 +23,8 @@
         "cost": 115,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": -1,
-        "baseClickValue": 0.1
+        "baseClickValue": 0.1,
+        "displayRange": 2
     },
     "Convenience Store": {
         "name": "Convenience Store",
@@ -37,7 +38,8 @@
         "cost": 175,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 1.5,
-        "baseClickValue": 2
+        "baseClickValue": 2,
+        "displayRange": 3
     },
     "Warehouse": {
         "name": "Warehouse",
@@ -47,7 +49,8 @@
         "cost": 400,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 3,
-        "baseClickValue": 0.5
+        "baseClickValue": 0.5,
+        "displayRange": 3
     },
     "Fountain": {
         "name": "Fountain",
@@ -57,7 +60,8 @@
         "cost": 1000,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 1,
-        "baseClickValue": 1.5
+        "baseClickValue": 1.5,
+        "displayRange": 2
     },
     "Bank": {
         "name": "Bank",
@@ -70,7 +74,8 @@
         "cost": 2000,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 3,
-        "baseClickValue": 1
+        "baseClickValue": 1,
+        "displayRange": 5
     },
     "Apartment": {
         "name": "Apartment",
@@ -106,7 +111,8 @@
         "cost": 15000,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": -10,
-        "baseClickValue": 1.5
+        "baseClickValue": 1.5,
+        "displayRange": 5
     },
     "Hermit": {
         "name": "Hermit",
@@ -119,7 +125,8 @@
         "cost": 30000,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 50,
-        "baseClickValue": 3
+        "baseClickValue": 3,
+        "displayRange": 3
     },
     "Office": {
         "name": "Office",
@@ -132,6 +139,7 @@
         "cost": 50000,
         "shopSelectionType": "TILE_AND_BUILDING",
         "baseCashGrowthRate": 15,
-        "baseClickValue": 2
+        "baseClickValue": 2,
+        "displayRange": 3
     }
 }

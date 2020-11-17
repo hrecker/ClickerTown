@@ -40,6 +40,14 @@ export function initializeMap(width, height) {
     return map;
 }
 
+export function getPrimaryTileContents(x, y) {
+    let contents = map[x][y].tile;
+    if (map[x][y].building) {
+        contents = map[x][y].building;
+    }
+    return contents;
+}
+
 function updatePlacementCounts() {
     placementCounts = {};
     for (let x = 0; x < map.length; x++) {

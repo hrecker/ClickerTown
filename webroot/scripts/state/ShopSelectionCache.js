@@ -1,5 +1,7 @@
 import { getPriceIncreaseRate } from './GameState';
 import { getPlacementCount, getExpansionCount } from "./MapState";
+import { getBuildingRelationship } from '../model/Building';
+import { getTileRelationship } from '../model/Tile';
 
 export const ShopSelectionType = Object.freeze({
     DEMOLITION: 0,
@@ -7,6 +9,12 @@ export const ShopSelectionType = Object.freeze({
     BUILDING_ONLY: 2,
     TILE_AND_BUILDING: 3,
     EXPAND_MAP: 4
+});
+
+export const SelectionRelationship = Object.freeze({
+    NEUTRAL: 0,
+    POSITIVE: 1,
+    NEGATIVE: 2
 });
 
 let selections = {};
@@ -52,6 +60,13 @@ export function getSelection(selectionName) {
 
 export function getSelectionProp(selectionName, propName) {
     return selections[selectionName][propName];
+}
+
+export function getSelectionRange(selectionName) {
+    if (!selections[selectionName] || !selections[selectionName].displayRange) {
+        return 0;
+    }
+    return selections[selectionName].displayRange;
 }
 
 export function getTileName(selectionName) {
@@ -104,4 +119,15 @@ export function setExpandPriceIncreaseRate(increaseRate) {
 
 export function getExpandPrice() {
     return Math.floor(expandBasePrice * Math.pow(expandPriceIncreaseRate, getExpansionCount()));
+}
+
+export function getSelectionRelationship(selection1, selection2) {
+    let type = getType(selection1);
+    if (type == ShopSelectionType.BUILDING_ONLY || type == ShopSelectionType.TILE_AND_BUILDING) {
+        return getBuildingRelationship(selection1, selection2);
+    } else if (type == ShopSelectionType.TILE_ONLY) {
+        return getTileRelationship(selection1, selection2);
+    }
+
+    return SelectionRelationship.NEUTRAL;
 }

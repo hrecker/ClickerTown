@@ -13,6 +13,7 @@ Buildings
     - TILE_AND_BUILDING: both a set tile and the building
 - baseCashGrowthRate: how much this building increases/decreases your cash growth rate
 - baseClickValue: how much this building increases/decreases the amount of cash you get per click
+- displayRange: range of tiles to highlight on the map when selected
 
 
 Tiles
@@ -24,6 +25,7 @@ Tiles
 - baseClickValue: how much this tile increases/decreases the amount of cash you get per click
 - startingTile: whether this tile can be set on the starting tilemap. Only tiles with 0 baseCashGrowthRate and 0 baseClickValue should be starting tiles
 - flatCost: whether this tile has a flat cost (does not increase based on how many you have)
+- displayRange: range of tiles to highlight on the map when selected
 
 
 Initials

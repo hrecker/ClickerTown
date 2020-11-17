@@ -1,4 +1,5 @@
 import { getAdjacentCoordinates } from '../state/MapState';
+import { SelectionRelationship } from '../state/ShopSelectionCache';
 
 export function getTileCashGrowthRate(tile, map, x, y) {
     if (!tile) {
@@ -32,4 +33,19 @@ export function getTileClickValue(tile, map, x, y) {
         return 0;
     }
     return tile['baseClickValue'];
+}
+
+
+// Positive, negative, or neutral. Ex: grass positive with grass and fountains.
+// See above methods for details on the relationships between buildings/tiles.
+export function getTileRelationship(tile, other) {
+    switch (tile) {
+        case "Grass":
+            if (other == "Grass" || other == "Fountain") {
+                return SelectionRelationship.POSITIVE;
+            }
+            break;
+    }
+    // Neutral if not specified
+    return SelectionRelationship.NEUTRAL;
 }

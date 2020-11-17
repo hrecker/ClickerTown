@@ -1,4 +1,5 @@
 import { getTilesWithinRange } from '../state/MapState';
+import { SelectionRelationship, ShopSelectionType, getType } from '../state/ShopSelectionCache';
 
 function countHouses(map, tiles) {
     let houseCount = 0;
@@ -104,4 +105,74 @@ export function getBuildingClickValue(building, map, x, y) {
         return 0;
     }
     return building['baseClickValue'];
+}
+
+// Positive, negative, or neutral. Ex: courthouses positive with all
+// building except courthouse, which is negative. House neutral with 
+// all buildings. Etc.
+// See above methods for details on the relationships between buildings/tiles.
+export function getBuildingRelationship(building, other) {
+    switch (building) {
+        case "Restaurant":
+            if (other == "House" || other == "Apartment") {
+                return SelectionRelationship.POSITIVE;
+            }
+            break;
+        case "Convenience Store":
+            if (other == "Convenience Store") {
+                return SelectionRelationship.NEGATIVE;
+            }
+            break;
+        case "Bank":
+            if (other == "House" || other == "Apartment") {
+                return SelectionRelationship.POSITIVE;
+            }
+            if (other == "Bank") {
+                return SelectionRelationship.NEGATIVE;
+            }
+            break;
+        case "Warehouse":
+            if (other == "House" || other == "Apartment") {
+                return SelectionRelationship.NEGATIVE;
+            }
+            if (other == "Office") {
+                return SelectionRelationship.POSITIVE;
+            }
+            break;
+        case "Fountain":
+            if (other == "Grass") {
+                return SelectionRelationship.POSITIVE;
+            }
+            break;
+        case "Courthouse":
+            if (other == "Courthouse" || other == "Hermit") {
+                return SelectionRelationship.NEGATIVE;
+            } else if (getType(other) == ShopSelectionType.BUILDING_ONLY || 
+                           getType(other) == ShopSelectionType.TILE_AND_BUILDING) {
+                return SelectionRelationship.POSITIVE;
+            }
+            break;
+        case "Hermit":
+            if (getType(other) == ShopSelectionType.BUILDING_ONLY || 
+                    getType(other) == ShopSelectionType.TILE_AND_BUILDING) {
+                return SelectionRelationship.NEGATIVE;
+            }
+            break;
+        case "Office":
+            if (other == "Warehouse") {
+                return SelectionRelationship.POSITIVE;
+            }
+            break;
+    }
+
+    // Some buildings default to positive/negative
+    if (other == "Courthouse") {
+        return SelectionRelationship.POSITIVE;
+    }
+    if (other == "Hermit") {
+        return SelectionRelationship.NEGATIVE;
+    }
+
+    // Neutral if not specified
+    return SelectionRelationship.NEUTRAL;
 }

@@ -26,7 +26,8 @@
         "cost": 15,
         "baseCashGrowthRate": 0.1,
         "baseClickValue": 0,
-        "startingTile": false
+        "startingTile": false,
+        "displayRange": 1
     },
     "Sand": {
         "name": "Sand",
