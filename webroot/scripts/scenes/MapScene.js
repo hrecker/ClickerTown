@@ -257,7 +257,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     displayToMapCoordinates(displayX, displayY) {
-        if (!this.areTileCoordinatesValid(displayX, displayY)) {
+        if (!map.areCoordinatesValid(displayX, displayY)) {
             return new Phaser.Math.Vector2(-1, -1);
         }
         switch(map.getMapRotation()) {
@@ -274,7 +274,7 @@ export class MapScene extends Phaser.Scene {
     }
 
     mapToDisplayCoordinates(mapX, mapY) {
-        if (!this.areTileCoordinatesValid(mapX, mapY)) {
+        if (!map.areCoordinatesValid(mapX, mapY)) {
             return new Phaser.Math.Vector2(-1, -1);
         }
         switch(map.getMapRotation()) {
@@ -309,7 +309,7 @@ export class MapScene extends Phaser.Scene {
         let displayTile = this.worldCoordinatesToDisplayTileCoordinates(clickCoords.x, clickCoords.y);
         let mapTile = this.displayToMapCoordinates(displayTile.x, displayTile.y);
         if (pointer.rightButtonReleased()) {
-            if (this.areTileCoordinatesValid(mapTile.x, mapTile.y)) {
+            if (map.areCoordinatesValid(mapTile.x, mapTile.y)) {
                 if(map.getMap()[mapTile.x][mapTile.y].building) {
                     // Rotate existing building
                     let building = map.getMap()[mapTile.x][mapTile.y].building;
@@ -329,7 +329,7 @@ export class MapScene extends Phaser.Scene {
                 }
             }
         } else {
-            if (this.currentShopSelection && this.areTileCoordinatesValid(mapTile.x, mapTile.y) &&
+            if (this.currentShopSelection && map.areCoordinatesValid(mapTile.x, mapTile.y) &&
                     map.canPlaceShopSelection(this.currentShopSelection, mapTile.x, mapTile.y)) {
                 // Build the shop selection if enough cash
                 if (map.getShopSelectionPrice(this.currentShopSelection, 
@@ -388,7 +388,7 @@ export class MapScene extends Phaser.Scene {
             this.buildingImages[displayCoords.x][displayCoords.y].setTexture(this.getSelectionTextureName(selection, this.shopSelectionRotation));
         }
         // Reset tile alpha to default on previous hovered tile
-        if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
+        if (map.areCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
             this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
         }
         this.tileHighlightActiveX = -1;
@@ -436,29 +436,19 @@ export class MapScene extends Phaser.Scene {
 
         // Show rates for whatever already exists on the tile
         if (showExistingBuildingRates) {
+            let rates = state.getTileCashRates(map.getMap(), tileX, tileY);
+            let displayName = map.getMap()[tileX][tileY].tile;
             if (map.getMap()[tileX][tileY].building) {
-                let longName = map.getMap()[tileX][tileY].building;
-                let shortName = getSelectionProp(longName, 'shortName');
-                // Building values
-                this.updatePreviewTexts(shortName ? shortName : longName,
-                    build.getBuildingCashGrowthRate(getSelection(longName), map.getMap(), tileX, tileY),
-                    build.getBuildingClickValue(getSelection(longName), map.getMap(), tileX, tileY));
-            } else {
-                // Tile values
-                let tileName = map.getMap()[tileX][tileY].tile;
-                this.updatePreviewTexts(tileName,
-                    tile.getTileCashGrowthRate(getSelection(tileName), map.getMap(), tileX, tileY),
-                    tile.getTileClickValue(getSelection(tileName), map.getMap(), tileX, tileY));
+                displayName = map.getMap()[tileX][tileY].building;
+                let shortName = getSelectionProp(displayName, 'shortName');
+                if (shortName) {
+                    displayName = shortName;
+                }
             }
+            this.updatePreviewTexts(displayName, rates.cashGrowthRate, rates.clickValue);
         // Showing shop selection rates preview
         } else {
-            let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
-            map.addShopSelectionToMap(this.currentShopSelection, mapCopy, tileX, tileY, 0);
-            let rates = state.getCashRates(mapCopy);
-            let rateDiffs = {
-                cashGrowthRate: rates['cashGrowthRate'] - state.getCashGrowthRate(),
-                clickValue: rates['clickValue'] - state.getClickCashValue()
-            }
+            let rateDiffs = state.getCashRateDiff(this.currentShopSelection, tileX, tileY);
             // Preview difference in rates that would result after shop selection is placed
             this.updatePreviewTexts(
                 -1 * map.getShopSelectionPrice(this.currentShopSelection, tileX, tileY), 
@@ -538,14 +528,14 @@ export class MapScene extends Phaser.Scene {
         }
 
         // Reset tile alpha to default on previous hovered tile
-        if (this.areTileCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
+        if (map.areCoordinatesValid(this.tileHighlightActiveX, this.tileHighlightActiveY)) {
             this.tileMapImages[this.tileHighlightActiveX][this.tileHighlightActiveY].alpha = 1;
         }
         this.tileHighlightActiveX = displayTile.x;
         this.tileHighlightActiveY = displayTile.y;
 
         // Update hover image/tile image, cash preview, and alpha
-        if (this.areTileCoordinatesValid(tile.x, tile.y) && map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
+        if (map.areCoordinatesValid(tile.x, tile.y) && map.canPlaceShopSelection(this.currentShopSelection, tile.x, tile.y)) {
             let tileCoords = this.displayTileCoordinatesToWorldCoordinates(displayTile.x, displayTile.y);
             this.hoverImage.x = tileCoords.x;
             this.hoverImage.y = tileCoords.y;
@@ -569,7 +559,7 @@ export class MapScene extends Phaser.Scene {
         // Hide preview, or show stats for existing building
         } else {
             this.hoverImage.alpha = 0;
-            if (this.areTileCoordinatesValid(displayTile.x, displayTile.y)) {
+            if (map.areCoordinatesValid(displayTile.x, displayTile.y)) {
                 this.updatePreview(tile.x, tile.y, displayTile.x, displayTile.y, true);
                 this.showRangeHighlight(map.getPrimaryTileContents(tile.x, tile.y), tile.x, tile.y);
             } else {
@@ -587,7 +577,7 @@ export class MapScene extends Phaser.Scene {
         let range = getSelectionRange(selection);
         // Clear old highlights
         for (let tile of this.rangeHighlights) {
-            if (this.areTileCoordinatesValid(tile.x, tile.y)) {
+            if (map.areCoordinatesValid(tile.x, tile.y)) {
                 this.tileMapImages[tile.x][tile.y].setTint(0xffffff);
                 if (this.buildingImages[tile.x][tile.y].alpha == 1) {
                     this.buildingImages[tile.x][tile.y].setTint(0xffffff);
@@ -645,10 +635,6 @@ export class MapScene extends Phaser.Scene {
         x = Math.round(tx);
         y = Math.round(ty);
         return new Phaser.Math.Vector2(x, y);
-    }
-
-    areTileCoordinatesValid(x, y) {
-        return x >= 0 && x < this.mapWidth && y >= 0 && y < this.mapHeight;
     }
 
     // Update highlighted tile

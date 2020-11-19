@@ -1,6 +1,7 @@
 import * as buildModel from '../model/Building';
 import * as tileModel from '../model/Tile';
-import { getSelection } from './ShopSelectionCache';
+import * as map from '../state/MapState';
+import { getSelection, getMaxSelectionRange } from './ShopSelectionCache';
 
 let startingCashGrowthRate;
 let startingClickValue;
@@ -11,11 +12,6 @@ let clickCashValueDecicents;
 let currentCashCallbacks = [];
 let cashGrowthCallbacks = [];
 let clickCashCallbacks = [];
-
-// Cache for cash rates when hovering a selected building over different squares
-let cashRateCache = {};
-let cashRateCacheSize = 0;
-const cashRateCacheSizeLimit = 2500;
 
 export function setStartingCashGrowthRate(growthRate) {
     startingCashGrowthRate = growthRate;
@@ -110,45 +106,78 @@ export function addClickCashListener(callback, scene) {
     });
 }
 
-function invalidateCashRateCache() {
-    cashRateCache = {};
-    cashRateCacheSize = 0;
-}
-
-export function getCashRates(tileMap) {
-    //TODO may this more efficient (only look 5 tiles in any direction) when mousing selection over map, to handle huge maps
-    let cacheKey = JSON.stringify(tileMap);
-    if (cashRateCache.hasOwnProperty(cacheKey)) {
-        return cashRateCache[cacheKey];
-    }
-
+function getCashRates(tileMap) {
     let cashGrowthRate = startingCashGrowthRate;
     let clickValue = startingClickValue;
     for (let x = 0; x < tileMap.length; x++) {
         for (let y = 0; y < tileMap[x].length; y++) {
-            let building = tileMap[x][y].building;
-            let tile = tileMap[x][y].tile;
-            if (building) {
-                cashGrowthRate += buildModel.getBuildingCashGrowthRate(getSelection(building), tileMap, x, y);
-                clickValue += buildModel.getBuildingClickValue(getSelection(building), tileMap, x, y);
-            }
-            cashGrowthRate += tileModel.getTileCashGrowthRate(getSelection(tile), tileMap, x, y);
-            clickValue += tileModel.getTileClickValue(getSelection(tile), tileMap, x, y);
+            let rates = getTileCashRates(tileMap, x, y);
+            cashGrowthRate += rates.cashGrowthRate;
+            clickValue += rates.clickValue;
         }
     }
-    let result = {
+    return {
         cashGrowthRate: cashGrowthRate,
         clickValue: clickValue
     };
+}
 
-    // Prevent cache from growing indefinitely
-    if (cashRateCacheSize >= cashRateCacheSizeLimit) {
-        invalidateCashRateCache();
+// Get the difference in cash rates that would result from placing the selection on the given coordinates.
+// This is more efficient than recalculating rates for the entire tile map.
+export function getCashRateDiff(selection, tileX, tileY) {
+    let mapCopy = JSON.parse(JSON.stringify(map.getMap()));
+    map.addShopSelectionToMap(selection, mapCopy, tileX, tileY, 0);
+
+    let rangeToCheck = getMaxSelectionRange();
+    // Get rates from the area on the real tile map
+    let originalGrowthRate = 0;
+    let originalClickValue = 0;
+    for (let x = tileX - rangeToCheck; x <= tileX + rangeToCheck; x++) {
+        for (let y = tileY - rangeToCheck; y <= tileY + rangeToCheck; y++) {
+            if (Math.abs(x - tileX) + Math.abs(y - tileY) <= rangeToCheck) {
+                let rates = getTileCashRates(map.getMap(), x, y);
+                originalGrowthRate += rates.cashGrowthRate;
+                originalClickValue += rates.clickValue;
+            }
+        }
     }
 
-    cashRateCacheSize++;
-    cashRateCache[cacheKey] = result;
-    return result;
+    // Get rates from the area on the modified tile map
+    let modifiedGrowthRate = 0;
+    let modifiedClickValue = 0;
+    for (let x = tileX - rangeToCheck; x <= tileX + rangeToCheck; x++) {
+        for (let y = tileY - rangeToCheck; y <= tileY + rangeToCheck; y++) {
+            if (Math.abs(x - tileX) + Math.abs(y - tileY) <= rangeToCheck) {
+                let rates = getTileCashRates(mapCopy, x, y);
+                modifiedGrowthRate += rates.cashGrowthRate;
+                modifiedClickValue += rates.clickValue;
+            }
+        }
+    }
+
+    return {
+        cashGrowthRate: modifiedGrowthRate - originalGrowthRate,
+        clickValue: modifiedClickValue - originalClickValue
+    };
+}
+
+export function getTileCashRates(tileMap, x, y) {
+    let cashGrowthRate = 0;
+    let clickValue = 0;
+    if (map.areCoordinatesValid(x, y)) {
+        let building = tileMap[x][y].building;
+        let tile = tileMap[x][y].tile;
+        if (building) {
+            cashGrowthRate += buildModel.getBuildingCashGrowthRate(getSelection(building), tileMap, x, y);
+            clickValue += buildModel.getBuildingClickValue(getSelection(building), tileMap, x, y);
+        }
+        cashGrowthRate += tileModel.getTileCashGrowthRate(getSelection(tile), tileMap, x, y);
+        clickValue += tileModel.getTileClickValue(getSelection(tile), tileMap, x, y);
+    }
+    return {
+        cashGrowthRate: cashGrowthRate,
+        clickValue: clickValue
+    };
 }
 
 export function updateCashRates(tileMap) {

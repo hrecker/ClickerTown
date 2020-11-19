@@ -20,6 +20,7 @@ export const SelectionRelationship = Object.freeze({
 let selections = {};
 let expandBasePrice;
 let expandPriceIncreaseRate;
+let maxSelectionRange = 0;
 
 export function loadSelections(jsonCache) {
     // Demolition
@@ -35,12 +36,14 @@ export function loadSelections(jsonCache) {
         selections[buildingName].shopSelectionType = 
             ShopSelectionType[jsonCache.get('buildings')[buildingName]['shopSelectionType']];
         selections[buildingName].shopPriceCache = {};
+        maxSelectionRange = Math.max(getSelectionRange(buildingName), maxSelectionRange);
     }
     // Tiles
     for (let tileName in jsonCache.get('tiles')) {
         selections[tileName] = jsonCache.get('tiles')[tileName];
         selections[tileName].shopSelectionType = ShopSelectionType.TILE_ONLY;
         selections[tileName].shopPriceCache = {};
+        maxSelectionRange = Math.max(getSelectionRange(tileName), maxSelectionRange);
     }
     // Expand map
     let expand = {};
@@ -67,6 +70,10 @@ export function getSelectionRange(selectionName) {
         return 0;
     }
     return selections[selectionName].displayRange;
+}
+
+export function getMaxSelectionRange() {
+    return maxSelectionRange;
 }
 
 export function getTileName(selectionName) {
