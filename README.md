@@ -6,7 +6,7 @@ Try the game [here](https://robocrow.itch.io/clickertown)!
 # Game Overview
 The map is a 7x7 dirt square to start off. The player starts with no money, and clicks to earn enough to purchase buildings and tiles from the shop. Each building has different properties that can affect the amount of cash being generated, often depending on other nearby buildings. The map doesn't change size, so unwanted buildings must be demolished to make space for new buildings. The game autosaves every minute, as well as allowing manual saves.
 
-![MainGame](screenshots/main_game.png?raw=true)
+![MainGame](screenshots/main_game_v2.png?raw=true)
 
 Buildings can be rotated with right click (for aesthetic reasons). The camera is controlled with WASD and can zoom in and out with Q and E. The whole map can be rotated with the rotate button on the left. The button in the top left corner can be used to reset the game and start over.
 
