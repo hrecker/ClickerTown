@@ -20,7 +20,7 @@ const clickParticlesRateMs = 50;
 const defaultZoom = 0.85;
 const positiveRangeHighlight = 0x6eff81;
 const negativeRangeHighlight = 0xff6e6e;
-const neutralRangeHighlight = 0xffea94;
+const neutralRangeHighlight = 0xcfcfcf;
 
 export class MapScene extends Phaser.Scene {
     constructor() {
