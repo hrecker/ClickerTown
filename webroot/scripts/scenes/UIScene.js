@@ -128,7 +128,12 @@ export class UIScene extends Phaser.Scene {
             this.shopItems[i].selectionBox.setScale(selectionBoxScale);
             this.shopItems[i].sprite = this.add.image(position.x, position.y, this.shopItems[i].selection).setScale(imageScale);
             this.shopItems[i].selectionBox.setInteractive();
-            this.shopItems[i].selectionBox.on("pointerdown", () => { this.selectShopItem(i); });
+            this.shopItems[i].enabled = true;
+            this.shopItems[i].selectionBox.on("pointerdown", () => {
+                if (this.shopItems[i].enabled) {
+                    this.selectShopItem(i);
+                }
+            });
             this.shopItems[i].selectionBox.on("pointerover", () => { 
                 if (isInDialog()) {
                     return;
@@ -159,13 +164,16 @@ export class UIScene extends Phaser.Scene {
         this.shopItems[index].text = this.add.text(position.x + 12, position.y - 6, "Expand map", 
             { font: "bold 16px Verdana", fill: "#000000" }).setOrigin(0.5);
         this.shopItems[index].selectionBox.setInteractive();
+        this.shopItems[index].enabled = true;
         this.shopItems[index].selectionBox.on("pointerdown", () => {
-            let price = getExpandPrice();
-            if (state.getCurrentCash() >= price) {
-                audio.playSound(this, 'expandMap');
-                extendMap();
-                state.addCurrentCash(-1 * price);
-                this.placementListener(["expand"], this);
+            if (this.shopItems[index].enabled) {
+                let price = getExpandPrice();
+                if (state.getCurrentCash() >= price) {
+                    audio.playSound(this, 'expandMap');
+                    extendMap();
+                    state.addCurrentCash(-1 * price);
+                    this.placementListener(["expand"], this);
+                }
             }
         });
         this.shopItems[index].selectionBox.on("pointerover", () => { 
@@ -307,23 +315,23 @@ export class UIScene extends Phaser.Scene {
             // If the player should be able to select this option then make it active
             if (getType(this.shopItems[i].selection) == ShopSelectionType.DEMOLITION || 
                     getPrice(this.shopItems[i].selection) <= currentCash) {
-                if (!this.shopItems[i].selectionBox.input.enabled) {
+                if (!this.shopItems[i].enabled) {
                     this.shopItems[i].sprite.alpha = 1;
                     if (this.shopItems[i].selection == "expand") {
                         this.shopItems[i].text.alpha = 1;
                     }
                     // If shop item is unlocking just now, then play a little sound
                     audio.playSound(this, "shopUnlock", 0.75);
-                    this.shopItems[i].selectionBox.setInteractive();
+                    this.shopItems[i].enabled = true;
                     if (getType(this.shopItems[i].selection) != ShopSelectionType.DEMOLITION) {
                         this.shopItems[i].priceText.setColor("#ffffff");
                     }
                 }
             // Otherwise prevent selecting this option
-            } else if(this.shopItems[i].selectionBox.input.enabled) {
+            } else if(this.shopItems[i].enabled) {
                 this.shopItems[i].sprite.alpha = 0.5;
                 this.shopItems[i].priceText.setColor("#ff6666");
-                this.shopItems[i].selectionBox.disableInteractive();
+                this.shopItems[i].enabled = false;
                 if (getShopSelection() == this.shopItems[i].selection) {
                     this.clearShopSelection();
                 }
