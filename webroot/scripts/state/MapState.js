@@ -156,13 +156,14 @@ export function addPlacementListener(callback, scene) {
 
 export function addShopSelectionToMap(selection, tileMap, x, y, rotation) {
     let changed = [];
-    if (getType(selection) == ShopSelectionType.DEMOLITION) {
-        if (tileMap === map) {
+    if (getType(selection) == ShopSelectionType.DEMOLITION || getType(selection) == ShopSelectionType.TILE_ONLY) {
+        if (tileMap === map && tileMap[x][y].building) {
             decrementPlacementCount(tileMap[x][y].building);
             changed.push(tileMap[x][y].building);
         }
         tileMap[x][y].building = null;
-    } else {
+    }
+    if (getType(selection) != ShopSelectionType.DEMOLITION) {
         if (getType(selection) != ShopSelectionType.TILE_ONLY) {
             tileMap[x][y].building = selection;
             tileMap[x][y].rotation = rotation;

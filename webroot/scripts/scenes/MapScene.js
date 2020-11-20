@@ -1,12 +1,10 @@
 import * as state from '../state/CashState';
 import * as map from '../state/MapState';
-import * as build from '../model/Building';
-import * as tile from '../model/Tile';
 import { addShopSelectionListener, isInDialog } from '../state/UIState';
 import { addGameResetListener } from '../state/GameState';
 import { formatCash, formatPhaserCashText, setTextColorIfNecessary } from '../util/Util';
 import * as audio from '../state/AudioState';
-import { getType, ShopSelectionType, SelectionRelationship, getSelection, getSelectionProp, getSelectionRange, getSelectionRelationship } from '../state/ShopSelectionCache';
+import { getType, ShopSelectionType, SelectionRelationship, getSelectionProp, getSelectionRange, getSelectionRelationship } from '../state/ShopSelectionCache';
 
 const tileScale = 1;
 const blockImageHeight = 100 * tileScale;
@@ -408,23 +406,25 @@ export class MapScene extends Phaser.Scene {
     // Create the popup preview used to show building and tile status
     createPreview() {
         let previewTextStyle = { font: "22px Verdana", align: "center" };
-        let previewRect = this.uiScene.add.nineslice(0, 0, 200, 125, 'greyPanel', 7).setOrigin(0.5, 1).setAlpha(0.65);
-        this.tilePreviewTitle = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
-            previewRect.getTopLeft().y + previewTextMargin,
+        this.previewRect = this.uiScene.add.nineslice(0, 0, previewWidth, previewHeight, 'greyPanel', 7).setOrigin(0.5, 1).setAlpha(0.65);
+        this.tilePreviewTitle = this.uiScene.add.text(this.previewRect.getTopLeft().x + previewTextMargin,
+            this.previewRect.getTopLeft().y + previewTextMargin,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
         this.tilePreviewTitle.setColor("#000");
-        this.tilePreviewGrowthRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
-            previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3,
+        this.tilePreviewGrowthRate = this.uiScene.add.text(this.previewRect.getTopLeft().x + previewTextMargin,
+            this.previewRect.getTopLeft().y + previewTextMargin + previewHeight / 3,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
-        this.tilePreviewClickRate = this.uiScene.add.text(previewRect.getTopLeft().x + previewTextMargin,
-            previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3,
+        this.tilePreviewClickRate = this.uiScene.add.text(this.previewRect.getTopLeft().x + previewTextMargin,
+            this.previewRect.getTopLeft().y + previewTextMargin + 2 * previewHeight / 3,
             "", previewTextStyle).setFixedSize(previewWidth - 2 * previewTextMargin, previewHeight / 3);
         this.tilePreview = this.uiScene.add.container(0, 0, [
-            previewRect,
+            this.previewRect,
             this.tilePreviewTitle,
             this.tilePreviewGrowthRate,
             this.tilePreviewClickRate]);
         this.tilePreview.setVisible(false);
+        this.previewIsExtended = false;
+        this.lastPreviewWidth = previewWidth;
     }
 
     // Update building and tile preview values
@@ -436,16 +436,33 @@ export class MapScene extends Phaser.Scene {
 
         // Show rates for whatever already exists on the tile
         if (showExistingBuildingRates) {
-            let rates = state.getTileCashRates(map.getMap(), tileX, tileY);
             let displayName = map.getMap()[tileX][tileY].tile;
+            let longName = displayName;
             if (map.getMap()[tileX][tileY].building) {
                 displayName = map.getMap()[tileX][tileY].building;
+                longName = displayName;
                 let shortName = getSelectionProp(displayName, 'shortName');
                 if (shortName) {
                     displayName = shortName;
                 }
             }
-            this.updatePreviewTexts(displayName, rates.cashGrowthRate, rates.clickValue);
+            // Show diff between existing tile and shop selection if applicable
+            if (this.currentShopSelection && this.currentShopSelection != longName &&
+                    getType(this.currentShopSelection) != ShopSelectionType.DEMOLITION) {
+                let selectionDisplayName = getSelectionProp(this.currentShopSelection, 'shortName');
+                if (!selectionDisplayName) {
+                    selectionDisplayName = this.currentShopSelection;
+                }
+
+                let rateDiffs = state.getCashRateDiff(this.currentShopSelection, tileX, tileY);
+                let previewTitle = displayName + " -> " + selectionDisplayName;
+                this.updatePreviewTexts(previewTitle, rateDiffs.cashGrowthRate, rateDiffs.clickValue);
+                this.updatePreviewWidth(true);
+            } else {
+                let rates = state.getTileCashRates(map.getMap(), tileX, tileY);
+                this.updatePreviewTexts(displayName, rates.cashGrowthRate, rates.clickValue);
+                this.updatePreviewWidth(false);
+            }
         // Showing shop selection rates preview
         } else {
             let rateDiffs = state.getCashRateDiff(this.currentShopSelection, tileX, tileY);
@@ -454,6 +471,7 @@ export class MapScene extends Phaser.Scene {
                 -1 * map.getShopSelectionPrice(this.currentShopSelection, tileX, tileY), 
                 rateDiffs.cashGrowthRate,
                 rateDiffs.clickValue);
+            this.updatePreviewWidth(false);
         }
     }
 
@@ -473,6 +491,33 @@ export class MapScene extends Phaser.Scene {
         } else {
             // Highlight numeric values based on positive/negative
             formatPhaserCashText(text, value, suffix, true, false);
+        }
+    }
+
+    updatePreviewWidth(shouldExtend) {
+        if (shouldExtend || this.previewIsExtended) {
+            let width = previewWidth;
+            if (shouldExtend) {
+                width = this.tilePreviewTitle.text.length * 15;
+            }
+            if (width != this.lastPreviewWidth) {
+                this.previewRect.resize(width, previewHeight);
+                this.tilePreviewTitle.setFixedSize(width - 2 * previewTextMargin, previewHeight / 3);
+                this.tilePreviewTitle.setPosition(this.previewRect.getTopLeft().x + previewTextMargin,
+                    this.previewRect.getTopLeft().y + previewTextMargin);
+
+                this.previewIsExtended = shouldExtend;
+                this.lastPreviewWidth = width;
+                
+                // There is a bug in Phaser 3 that causes fonts to looks messy after resizing
+                // the nineslice. For now using the workaround of creating and immediately
+                // deleting a dummy text object after resizing the nineslice.
+                // When this is fixed in a future Phaser release this can be removed.
+                // See https://github.com/jdotrjs/phaser3-nineslice/issues/16
+                // See https://github.com/photonstorm/phaser/issues/5064
+                let dummyText = this.add.text(0, 0, "");
+                dummyText.destroy();
+            }
         }
     }
 
