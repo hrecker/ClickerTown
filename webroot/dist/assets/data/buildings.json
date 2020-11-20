@@ -103,7 +103,7 @@
     "Courthouse": {
         "name": "Courthouse",
         "tileName": "Concrete",
-        "description": "+$2/second for each non-Hermit, non-Courthouse building within 5 tiles. -$100/second for each Courthouse within 4 tiles.",
+        "description": "+$2/second for each non-Hermit, non-Courthouse building within 5 tiles. -$100/second for each Courthouse within 5 tiles.",
         "sprite": "courthouse.png",
         "sprite90": "courthouse90-180.png",
         "sprite180": "courthouse90-180.png",
