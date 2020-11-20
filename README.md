@@ -1,7 +1,7 @@
 # ClickerTown
 ClickerTown is an isometric clicker game built using [Phaser 3](https://phaser.io/). Click for cash, so you can build buildings to get more cash so you can build more buildings!
 
-Try the game [here](https://robocrow.itch.io/clickertown)!
+**Try the game [here](https://robocrow.itch.io/clickertown)!**
 
 # Game Overview
 The map is a 7x7 dirt square to start off. The player starts with no money, and clicks to earn enough to purchase buildings and tiles from the shop. Each building has different properties that can affect the amount of cash being generated, often depending on other nearby buildings. The map doesn't change size, so unwanted buildings must be demolished to make space for new buildings. The game autosaves every minute, as well as allowing manual saves.
